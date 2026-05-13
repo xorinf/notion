@@ -9,6 +9,7 @@ import {
   bodyText, 
   headingClass 
 } from '../styles/common'
+import Notification from './Notification';
 
 function Home() {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ function Home() {
           Plan smarter, work faster, and manage tasks effortlessly. 
           The ultimate workspace for individuals and teams.
         </p>
+        <Notification />
         <div className="flex items-center justify-center gap-4">
           <button onClick={() => navigate("/register")} className={primaryBtn}>
             Get Started
@@ -83,6 +85,8 @@ function Home() {
           </p>
         </div>
       </div>
+
+      
 
       {/* CTA Section */}
       <div className="text-center max-w-2xl mx-auto bg-white border border-[#dadce0] rounded-[24px] p-10 shadow-sm">

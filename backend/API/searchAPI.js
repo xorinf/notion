@@ -1,38 +1,83 @@
 import express from 'express'
-import { cardModel, pageModel, boardModel } from '../models/mainModels.js'
+import { cardModel, pageModel, boardModel, userModel } from '../models/mainModels.js'
 import { verifyToken } from '../middleware/verifyToken.js'
 
 export const searchAPP = express.Router()
 
-// search across cards,pages,boards
-searchAPP.get('/', verifyToken(), async(req,res,next)=>{
+// universal search
+searchAPP.get('/', verifyToken(), async (req, res, next) => {
     try {
-        const {q,workspace,type}=req.query
-        if(!q) return res.status(400).json({message:"Please enter a search query"})
-        if(!workspace) return res.status(400).json({message:"Workspace is required"})
+        const { q } = req.query
 
-        let result={}
+        if (!q) {
+            return res.status(400).json({
+                message: "Please enter a search query"
+            })
+        }
+
         const searchRegex = new RegExp(q, 'i')
 
-        if(type=="card"){
-            const cards=await cardModel.find({workspace,title:searchRegex, archived: false})
-            result.cards=cards
-        }
-        else if(type=="page"){
-            const pages=await pageModel.find({workspace,title:searchRegex, isArchived: false})
-            result.pages=pages
-        }
-        else if(type=="board"){
-            const boards=await boardModel.find({workspace,title:searchRegex, archived: false})
-            result.boards=boards
-        }
-        else {
-            const cards = await cardModel.find({workspace,title: searchRegex, archived: false})
-            const pages = await pageModel.find({workspace,title: searchRegex, isArchived: false})
-            const boards = await boardModel.find({workspace,title: searchRegex, archived: false})
-            result= {cards,pages,boards}
-        }
+        const [cards, pages, boards, user] = await Promise.all([
+            cardModel.find({
+                $or: [
+                    { title: searchRegex },
+                    { description: searchRegex }
+                ],
+                archived: false
+            }),
 
-        res.status(200).json({success: true, payload: result})
-    } catch(err) { next(err) }
+            pageModel.find({
+                $or: [
+                    { title: searchRegex },
+                    { content: searchRegex }
+                ],
+                isArchived: false
+            }),
+
+            boardModel.find({
+                title: searchRegex,
+                archived: false
+            }),
+
+            userModel.findById(req.user.id)
+        ])
+        // const user = await userModel.findById(req.user.id).populate("workspaces", "firstName lastName ")
+
+        const workspaces = user.workspaces
+
+        const payload = [
+            ...cards.map(card => ({
+                type: "card",
+                id: card._id,
+                link: `/card/${card._id}`,
+                data: card
+            })),
+
+            ...pages.map(page => ({
+                type: "page",
+                id: page._id,
+                link: `/page/${page._id}`,
+                data: page
+            })),
+
+            ...boards.map(board => ({
+                type: "board",
+                id: board._id,
+                link: `/board/${board._id}`,
+                data: board
+            })),
+
+            ...workspaces.map(board => ({
+
+            }))
+        ]
+
+        res.status(200).json({
+            success: true,
+            payload
+        })
+
+    } catch (err) {
+        next(err)
+    }
 })

@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { Eye, EyeOff, Loader2, Lock, ArrowLeft } from 'lucide-react'
 import axios from 'axios'
 import {
-  formCard,
+  // formCard,
   formTitle,
   labelClass,
   inputClass,
