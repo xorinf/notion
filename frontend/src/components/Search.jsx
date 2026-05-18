@@ -1,112 +1,118 @@
-import { useState } from 'react'
-import { Search as SearchIcon, Loader2 } from 'lucide-react'
-import axios from 'axios'
+import { useState, useEffect } from 'react'
+import { Search as SearchIcon, Loader2, FileText, LayoutTemplate, MessageSquare, Briefcase } from 'lucide-react'
+import { useWorkspace } from '../../store/workspaceStore'
+import { useSearch } from '../../store/searchStore'
 import {
   inputClass,
   cardClass,
   headingClass,
   bodyText,
-  mutedText,
   emptyStateClass,
   errorClass,
 } from '../styles/common'
-import { useWorkspace } from '../../store/workspaceStore'
+import { useNavigate } from 'react-router'
+
+const getEntityIcon = (type) => {
+  switch (type) {
+    case 'Page': return <FileText className="w-5 h-5 text-blue-500" />;
+    case 'Board': return <LayoutTemplate className="w-5 h-5 text-purple-500" />;
+    case 'Card': return <MessageSquare className="w-5 h-5 text-orange-500" />;
+    default: return <Briefcase className="w-5 h-5 text-gray-500" />;
+  }
+};
 
 function Search() {
+  const navigate = useNavigate();
   const currentWorkspace = useWorkspace(state => state.currentWorkspace)
+  const { searchResults, loading, error, globalSearch, clearResults } = useSearch();
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
 
-  const handleSearch = async (e) => {
-    e.preventDefault()
-    if (!query.trim()) return
-    
-    // Check for workspace
-    const workspaceId = currentWorkspace?._id
-    if (!workspaceId) {
-      setError('Please select a workspace to search.')
-      return
-    }
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (query.trim() && currentWorkspace?._id) {
+        globalSearch(query, currentWorkspace._id);
+      } else {
+        clearResults();
+      }
+    }, 400);
 
-    setLoading(true)
-    setError('')
-    setResults(null)
-    try {
-      const res = await axios.get(`/search?q=${encodeURIComponent(query.trim())}&workspace=${workspaceId}`, {
-        withCredentials: true,
-      })
-      
-      const payload = res.data.payload || {}
-      
-      // Flatten the results
-      const allResults = [
-        ...(payload.pages || []).map(p => ({ ...p, type: 'Page' })),
-        ...(payload.boards || []).map(b => ({ ...b, type: 'Board' })),
-        ...(payload.cards || []).map(c => ({ ...c, type: 'Card' }))
-      ]
-      
-      setResults(allResults)
-    } catch (err) {
-      setError(err?.response?.data?.message || 'Search failed. Try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
+    return () => clearTimeout(delayDebounceFn);
+  }, [query, currentWorkspace?._id]);
 
   return (
-    <div className="p-6 md:p-10 max-w-3xl mx-auto">
+    <div className="p-6 md:p-10 max-w-3xl mx-auto w-full">
       <h1 className={`${headingClass} mb-6 flex`}>Search</h1>
 
-      {/* Search bar */}
-      <form onSubmit={handleSearch} className="flex items-center gap-3 mb-8">
-        <div className="relative flex-1">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#80868b]" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search pages, boards, cards…"
-            className={`${inputClass} pl-9`}
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading || !query.trim()}
-          className="bg-[#1a73e8] text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-[#1558b0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
-        </button>
-      </form>
-
-      {/* Error */}
-      {error && <div className={`${errorClass} mb-6`}>{error}</div>}
-
-      {/* Results */}
-      {results !== null && (
-        results.length === 0 ? (
-          <p className={emptyStateClass}>No results found for "{query}"</p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {results.map((item, i) => (
-              <div key={item._id ?? i} className={`${cardClass} text-left`}>
-                <p className="text-xs text-[#1a73e8] font-semibold uppercase tracking-widest mb-1">
-                  {item.type}
-                </p>
-                <h3 className="text-sm font-medium text-[#202124]">{item.title ?? item.name}</h3>
-                {item.description && (
-                  <p className={`${bodyText} mt-1 line-clamp-2`}>{item.description}</p>
-                )}
-              </div>
-            ))}
+      {!currentWorkspace ? (
+        <div className={errorClass}>Please select a workspace to search.</div>
+      ) : (
+        <>
+          {/* Search bar */}
+          <div className="relative flex items-center mb-8">
+            <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#80868b]" />
+            <input
+              type="text"
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={`Search in ${currentWorkspace.name}...`}
+              className={`${inputClass} pl-12 py-4 text-lg shadow-sm`}
+            />
+            {loading && (
+              <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500 animate-spin" />
+            )}
           </div>
-        )
-      )}
 
-      {/* Idle state */}
-      {results === null && !loading && !error && (
-        <p className={emptyStateClass}>Type something and hit Search</p>
+          {/* Error */}
+          {error && <div className={`${errorClass} mb-6`}>{error}</div>}
+
+          {/* Results */}
+          {query.trim() && !loading && searchResults.length === 0 && (
+            <p className={emptyStateClass}>No results found for "{query}"</p>
+          )}
+
+          {searchResults.length > 0 && (
+            <div className="flex flex-col gap-4">
+              {searchResults.map((item, i) => (
+                <div 
+                  key={item._id ?? i} 
+                  className={`${cardClass} flex gap-4 cursor-pointer hover:border-blue-500 transition-colors group`}
+                  onClick={() => {
+                    // Navigate to the respective item
+                    if (item.type === 'Board') navigate(`/dashboard/board/${item._id}`);
+                    else if (item.type === 'Page') navigate(`/dashboard/workspace/${currentWorkspace._id}`); // Ideally select page
+                    else if (item.type === 'Card') navigate(`/dashboard/board/${item.board}`);
+                  }}
+                >
+                  <div className="mt-1 bg-gray-50 p-2 rounded-xl group-hover:bg-blue-50 transition-colors">
+                    {getEntityIcon(item.type)}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-base font-semibold text-[#202124] group-hover:text-blue-600 transition-colors">
+                        {item.title ?? item.name}
+                      </h3>
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-gray-100 text-gray-500">
+                        {item.type}
+                      </span>
+                    </div>
+                    {item.description && (
+                      <p className={`${bodyText} text-sm line-clamp-2`}>{item.description}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Idle state */}
+          {!query.trim() && !error && (
+            <div className="text-center py-16">
+              <SearchIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-400">Search across pages, boards, and cards</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

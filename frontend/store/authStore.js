@@ -137,6 +137,65 @@ export const useAuth = create((set) => ({
     }
   },
 
+  changePassword: async (currentPassword, newPassword) => {
+    set({ loading: true, error: null });
+    try {
+      await axios.put("/user/change-password", { currentPassword, newPassword }, { withCredentials: true });
+      set({ loading: false });
+    } catch (err) {
+      set({ error: err.response?.data?.message || "Failed to change password", loading: false });
+      throw err;
+    }
+  },
+
+  starBoard: async (boardId) => {
+    try {
+      const res = await axios.post(`/user/star/board/${boardId}`, {}, { withCredentials: true });
+      set({ currentUser: res.data.payload });
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  unstarBoard: async (boardId) => {
+    try {
+      const res = await axios.delete(`/user/star/board/${boardId}`, { withCredentials: true });
+      set({ currentUser: res.data.payload });
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  starPage: async (pageId) => {
+    try {
+      const res = await axios.post(`/user/star/page/${pageId}`, {}, { withCredentials: true });
+      set({ currentUser: res.data.payload });
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  unstarPage: async (pageId) => {
+    try {
+      const res = await axios.delete(`/user/star/page/${pageId}`, { withCredentials: true });
+      set({ currentUser: res.data.payload });
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  fetchStarred: async () => {
+    set({ loading: true, error: null });
+    try {
+      const res = await axios.get("/user/starred", { withCredentials: true });
+      set({ loading: false });
+      return res.data.payload;
+    } catch (err) {
+      set({ error: err.response?.data?.message || "Failed to fetch starred items", loading: false });
+      throw err;
+    }
+  },
+
   searchUsers: async (email) => {
     set({ loading: true, error: null });
     try {

@@ -28,7 +28,7 @@ function Home() {
           Plan smarter, work faster, and manage tasks effortlessly. 
           The ultimate workspace for individuals and teams.
         </p>
-        <Notification />
+
         <div className="flex items-center justify-center gap-4">
           <button onClick={() => navigate("/register")} className={primaryBtn}>
             Get Started

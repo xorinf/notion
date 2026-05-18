@@ -2,10 +2,14 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { useWorkspace } from '../../store/workspaceStore'
 import { useAuth } from '../../store/authStore'
+import { useBoard } from '../../store/boardStore'
+import { usePage } from '../../store/pageStore'
 import { 
   Briefcase, Users, Activity, Settings, 
-  Search, Plus, X, Shield, Edit2, Loader2, Trash2
+  Search, Plus, X, Shield, Edit2, Loader2, Trash2, LayoutGrid, ChevronRight, FileText, Mail
 } from 'lucide-react'
+import PageView from './PageView'
+import ActivityFeed from './ActivityFeed'
 import { 
   cardClass, primaryBtn, secondaryBtn, inputClass, labelClass 
 } from '../styles/common'
@@ -23,28 +27,49 @@ function Workspace() {
   const updateMemberRole = useWorkspace(state => state.updateMemberRole)
   const removeMember = useWorkspace(state => state.removeMember)
   const fetchWorkspaceActivity = useWorkspace(state => state.fetchWorkspaceActivity)
+  const sendInvite = useWorkspace(state => state.sendInvite)
   
   const currentUser = useAuth(state => state.currentUser)
   const searchUsers = useAuth(state => state.searchUsers)
 
-  const [activeTab, setActiveTab] = useState('members')
+  const [activeTab, setActiveTab] = useState('boards')
   const [activity, setActivity] = useState([])
+
+  // Board state
+  const boards = useBoard(state => state.boards)
+  const fetchBoards = useBoard(state => state.fetchBoards)
+  const createBoardAction = useBoard(state => state.createBoard)
+  const boardLoading = useBoard(state => state.loading)
+  const [showCreateBoard, setShowCreateBoard] = useState(false)
+  const [newBoardTitle, setNewBoardTitle] = useState('')
+  const [newBoardDesc, setNewBoardDesc] = useState('')
+  
+  // Page state
+  const pages = usePage(state => state.pages)
+  const fetchPages = usePage(state => state.fetchPages)
+  const createPage = usePage(state => state.createPage)
+  const pageLoading = usePage(state => state.loading)
+  const [selectedPageId, setSelectedPageId] = useState(null)
   
   // Edit Workspace Modal
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({ name: '', description: '', icon: '' })
   
-  // Add Member Modal
+  // Add Member / Invite Modal
   const [isAddingMember, setIsAddingMember] = useState(false)
   const [searchEmail, setSearchEmail] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [isSearching, setIsSearching] = useState(false)
+  const [memberToRemove, setMemberToRemove] = useState(null)
+  const [inviteRole, setInviteRole] = useState('MEMBER')
   
   useEffect(() => {
     if (id) {
       getWorkspaceById(id)
+      fetchBoards(id)
+      fetchPages(id)
     }
-  }, [id, getWorkspaceById])
+  }, [id, getWorkspaceById, fetchBoards])
 
   useEffect(() => {
     if (activeTab === 'activity' && id) {
@@ -108,13 +133,16 @@ function Workspace() {
     await updateMemberRole(currentWorkspace._id, userId, newRole)
   }
 
-  const [memberToRemove, setMemberToRemove] = useState(null)
 
   const handleRemoveMember = async () => {
     if (memberToRemove) {
       await removeMember(currentWorkspace._id, memberToRemove)
       setMemberToRemove(null)
     }
+  }
+
+  if (selectedPageId) {
+    return <PageView workspaceId={id} pageId={selectedPageId} onBack={() => setSelectedPageId(null)} />
   }
 
   return (
@@ -147,19 +175,116 @@ function Workspace() {
 
       {/* Tabs */}
       <div className="flex gap-6 border-b border-[#dadce0] mb-6">
-        <button 
-          onClick={() => setActiveTab('members')}
-          className={`pb-3 px-1 text-sm font-medium transition-colors border-b-2 ${activeTab === 'members' ? 'border-[#1d1d1f] text-[#1d1d1f]' : 'border-transparent text-[#5f6368] hover:text-[#1d1d1f]'}`}
-        >
-          <div className="flex items-center gap-2"><Users className="w-4 h-4" /> Members</div>
-        </button>
-        <button 
-          onClick={() => setActiveTab('activity')}
-          className={`pb-3 px-1 text-sm font-medium transition-colors border-b-2 ${activeTab === 'activity' ? 'border-[#1d1d1f] text-[#1d1d1f]' : 'border-transparent text-[#5f6368] hover:text-[#1d1d1f]'}`}
-        >
-          <div className="flex items-center gap-2"><Activity className="w-4 h-4" /> Activity</div>
-        </button>
+        {[
+          {key:'pages',label:'Pages',Icon:FileText},
+          {key:'boards',label:'Boards',Icon:LayoutGrid},
+          {key:'members',label:'Members',Icon:Users},
+          {key:'activity',label:'Activity',Icon:Activity}
+        ].map(t=>(
+          <button key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            className={`pb-3 px-1 text-sm font-medium transition-colors border-b-2 ${activeTab === t.key ? 'border-[#1d1d1f] text-[#1d1d1f]' : 'border-transparent text-[#5f6368] hover:text-[#1d1d1f]'}`}
+          >
+            <div className="flex items-center gap-2"><t.Icon className="w-4 h-4" /> {t.label}</div>
+          </button>
+        ))}
       </div>
+
+      {/* Pages Tab */}
+      {activeTab === 'pages' && (
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-[#1d1d1f]">Pages</h2>
+            <button 
+              onClick={async () => {
+                const newPage = await createPage({ title: 'Untitled Page', workspace: id });
+                if (newPage) setSelectedPageId(newPage._id);
+              }} 
+              disabled={pageLoading}
+              className={primaryBtn}
+            >
+              {pageLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} 
+              New Page
+            </button>
+          </div>
+          {pages.length === 0 ? (
+            <div className="bg-white rounded-2xl p-10 text-center border border-dashed border-[#dadce0]">
+              <FileText className="w-12 h-12 text-[#dadce0] mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-[#202124] mb-2">No pages yet</h3>
+              <p className="text-sm text-[#80868b]">Create a document page to write notes or specifications.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pages.map(p => (
+                <div key={p._id} onClick={() => setSelectedPageId(p._id)} className={`${cardClass} flex flex-col group cursor-pointer hover:border-[#1a73e8] transition-colors`}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+                      {p.icon || <FileText className="w-4 h-4" />}
+                    </div>
+                    <h3 className="font-semibold text-[#202124] truncate flex-1">{p.title || 'Untitled'}</h3>
+                  </div>
+                  <p className="text-xs text-[#5f6368] mt-1 line-clamp-2 flex-1">
+                    {p.content ? p.content.substring(0, 100) + '...' : 'Empty page'}
+                  </p>
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#f1f3f4]">
+                    <span className="text-xs text-[#80868b]">
+                      Updated {new Date(p.updatedAt).toLocaleDateString()}
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-[#dadce0] group-hover:text-[#1a73e8] transition-colors" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Boards Tab */}
+      {activeTab === 'boards' && (
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-[#1d1d1f]">Boards</h2>
+            <button onClick={() => setShowCreateBoard(true)} className={primaryBtn}><Plus className="w-4 h-4" /> New Board</button>
+          </div>
+          {boards.length === 0 ? (
+            <div className="bg-white rounded-2xl p-10 text-center border border-dashed border-[#dadce0]">
+              <LayoutGrid className="w-12 h-12 text-[#dadce0] mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-[#202124] mb-2">No boards yet</h3>
+              <p className="text-sm text-[#80868b]">Create a board to start organizing tasks into lists and cards.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {boards.map(b => (
+                <div key={b._id} onClick={() => navigate(`/dashboard/board/${b._id}`)} className={`${cardClass} flex flex-col group`}>
+                  <div className="w-full h-2 rounded-t-xl -mt-5 -mx-5 mb-4" style={{width:'calc(100% + 40px)',backgroundColor:b.background||'#1a73e8'}} />
+                  <h3 className="font-semibold text-[#202124] truncate">{b.title}</h3>
+                  <p className="text-xs text-[#5f6368] mt-1 line-clamp-2 flex-1">{b.description || 'No description'}</p>
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#f1f3f4]">
+                    <span className="text-xs text-[#80868b]">{b.members?.length || 1} member(s)</span>
+                    <ChevronRight className="w-4 h-4 text-[#dadce0] group-hover:text-[#1a73e8] transition-colors" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {showCreateBoard && (
+            <div className="fixed inset-0 bg-[#202124]/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-[24px] w-full max-w-md shadow-2xl overflow-hidden">
+                <div className="flex items-center justify-between p-6 border-b border-[#dadce0]">
+                  <h2 className="text-xl font-semibold text-[#1d1d1f]">Create Board</h2>
+                  <button onClick={() => setShowCreateBoard(false)} className="p-2 hover:bg-[#efefed] rounded-full text-[#5f6368]"><X className="w-5 h-5" /></button>
+                </div>
+                <form onSubmit={async(e)=>{e.preventDefault();if(!newBoardTitle.trim())return;await createBoardAction({title:newBoardTitle,description:newBoardDesc,workspace:id});setNewBoardTitle('');setNewBoardDesc('');setShowCreateBoard(false);fetchBoards(id)}} className="p-6 space-y-4">
+                  <div><label className={labelClass}>Title</label><input required value={newBoardTitle} onChange={e=>setNewBoardTitle(e.target.value)} className={inputClass} placeholder="Board title" /></div>
+                  <div><label className={labelClass}>Description</label><textarea value={newBoardDesc} onChange={e=>setNewBoardDesc(e.target.value)} className={`${inputClass} min-h-[80px] resize-none`} placeholder="Optional description" /></div>
+                  <div className="flex justify-end gap-3"><button type="button" onClick={()=>setShowCreateBoard(false)} className={secondaryBtn}>Cancel</button><button type="submit" disabled={boardLoading} className={primaryBtn}>Create</button></div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
 
       {/* Members Tab */}
       {activeTab === 'members' && (
@@ -227,27 +352,9 @@ function Workspace() {
 
       {/* Activity Tab */}
       {activeTab === 'activity' && (
-        <div>
+        <div className="bg-white border border-[#dadce0] rounded-[16px] p-6">
           <h2 className="text-lg font-semibold text-[#1d1d1f] mb-6">Recent Activity</h2>
-          {activity.length === 0 ? (
-            <p className="text-sm text-[#5f6368]">No recent activity in this workspace.</p>
-          ) : (
-            <div className="space-y-4">
-              {activity.map((item, idx) => (
-                <div key={idx} className="flex gap-4 p-4 bg-white border border-[#dadce0] rounded-[16px]">
-                  <div className="w-8 h-8 rounded-full bg-[#efefed] flex items-center justify-center shrink-0">
-                    <Activity className="w-4 h-4 text-[#5f6368]" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-[#1d1d1f]">
-                      <span className="font-semibold">{item.user?.firstName || 'Someone'}</span> {item.action} <span className="font-medium">{item.entityModel}</span>
-                    </p>
-                    <p className="text-xs text-[#a1a1a6] mt-1">{new Date(item.createdAt).toLocaleString()}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <ActivityFeed workspaceId={id} />
         </div>
       )}
 
@@ -299,67 +406,61 @@ function Workspace() {
         </div>
       )}
 
-      {/* Add Member Modal */}
+      {/* Invite Member Modal */}
       {isAddingMember && (
         <div className="fixed inset-0 bg-[#202124]/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[24px] w-full max-w-md shadow-2xl overflow-hidden flex flex-col min-h-[400px]">
+          <div className="bg-white rounded-[24px] w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-[#dadce0]">
-              <h2 className="text-xl font-semibold text-[#1d1d1f]">Add Member</h2>
-              <button onClick={() => { setIsAddingMember(false); setSearchResults([]); setSearchEmail(''); }} className="p-2 hover:bg-[#efefed] rounded-full transition-colors text-[#5f6368]">
+              <h2 className="text-xl font-semibold text-[#1d1d1f]">Invite to Workspace</h2>
+              <button onClick={() => { setIsAddingMember(false); setSearchEmail(''); setInviteRole('MEMBER'); }} className="p-2 hover:bg-[#efefed] rounded-full transition-colors text-[#5f6368]">
                 <X className="w-5 h-5" />
               </button>
             </div>
             
-            <div className="p-6 flex-1 flex flex-col">
-              <form onSubmit={handleSearchUsers} className="flex gap-2 mb-6">
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#80868b]" />
+            <form onSubmit={async (e) => {
+              e.preventDefault()
+              if (!searchEmail.trim()) return
+              try {
+                await sendInvite(currentWorkspace._id, searchEmail, inviteRole)
+                alert(`Invite sent to ${searchEmail}`)
+                setSearchEmail('')
+                setIsAddingMember(false)
+              } catch (err) {
+                alert('Failed to send invite')
+              }
+            }} className="p-6">
+              <div className="mb-4">
+                <label className={labelClass}>Email Address</label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#80868b]" />
                   <input 
                     type="email" 
                     required
-                    placeholder="Search by email..." 
+                    placeholder="colleague@company.com" 
                     value={searchEmail}
                     onChange={(e) => setSearchEmail(e.target.value)}
                     className={`${inputClass} pl-9`}
                   />
                 </div>
-                <button type="submit" disabled={isSearching} className={secondaryBtn}>
-                  {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
-                </button>
-              </form>
-
-              <div className="flex-1 overflow-y-auto">
-                <label className={labelClass}>Results</label>
-                {searchResults.length === 0 && !isSearching && searchEmail && (
-                  <p className="text-sm text-[#80868b] text-center py-8">No users found.</p>
-                )}
-                <div className="space-y-2 mt-2">
-                  {searchResults.map(user => {
-                    const isAlreadyMember = currentWorkspace.members?.some(m => m.user._id === user._id)
-                    return (
-                      <div key={user._id} className="flex items-center justify-between p-3 border border-[#dadce0] rounded-xl">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#1a73e8]/10 text-[#1a73e8] flex items-center justify-center text-xs font-semibold">
-                            {user.firstName?.[0]?.toUpperCase() ?? '?'}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-[#1d1d1f]">{user.firstName} {user.lastName}</p>
-                            <p className="text-xs text-[#5f6368]">{user.email}</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => handleAddMember(user._id)}
-                          disabled={isAlreadyMember || loading}
-                          className={`text-xs px-3 py-1.5 rounded-full font-medium ${isAlreadyMember ? 'bg-[#efefed] text-[#80868b]' : 'bg-[#1a73e8] text-white hover:bg-[#1558b0]'}`}
-                        >
-                          {isAlreadyMember ? 'Added' : 'Add'}
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
               </div>
-            </div>
+              <div className="mb-6">
+                <label className={labelClass}>Role</label>
+                <select 
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="MEMBER">Member</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-3">
+                <button type="button" onClick={() => setIsAddingMember(false)} className={secondaryBtn}>Cancel</button>
+                <button type="submit" disabled={loading} className={primaryBtn}>
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send Invite'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

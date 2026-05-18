@@ -16,7 +16,7 @@ export const listSchema = new mongoose.Schema({
 
   position: { type: Number, required: true },
 
-  //archived: { type: Boolean, default: false },
+  archived: { type: Boolean, default: false },
 
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
 }, {
@@ -24,4 +24,4 @@ export const listSchema = new mongoose.Schema({
   versionKey: false
 });
 
-listSchema.index({ board: 1, position: 1 }, { unique: true });
+listSchema.index({ board: 1, position: 1 });

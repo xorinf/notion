@@ -172,6 +172,78 @@ export const useWorkspace = create((set, get) => ({
     }
   },
 
+  // ── Invites ───────────────────────────────────────────────
+
+  sendInvite: async (workspaceId, email, role = "MEMBER") => {
+    set({ loading: true, error: null });
+    try {
+      const res = await axios.post("/invite", { workspace: workspaceId, email, role }, { withCredentials: true });
+      set({ loading: false });
+      return res.data.payload;
+    } catch (err) {
+      set({ error: err.response?.data?.message || "Failed to send invite", loading: false });
+      throw err;
+    }
+  },
+
+  fetchPendingInvites: async (workspaceId) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await axios.get(`/invite?workspace=${workspaceId}`, { withCredentials: true });
+      set({ loading: false });
+      return res.data.payload;
+    } catch (err) {
+      set({ error: err.response?.data?.message || "Failed to fetch pending invites", loading: false });
+      throw err;
+    }
+  },
+
+  acceptInvite: async (token) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await axios.post(`/invite/accept/${token}`, {}, { withCredentials: true });
+      set({ loading: false });
+      return res.data.payload;
+    } catch (err) {
+      set({ error: err.response?.data?.message || "Failed to accept invite", loading: false });
+      throw err;
+    }
+  },
+
+  declineInvite: async (token) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await axios.post(`/invite/decline/${token}`, {}, { withCredentials: true });
+      set({ loading: false });
+      return res.data.payload;
+    } catch (err) {
+      set({ error: err.response?.data?.message || "Failed to decline invite", loading: false });
+      throw err;
+    }
+  },
+
+  cancelInvite: async (inviteId) => {
+    set({ loading: true, error: null });
+    try {
+      await axios.delete(`/invite/${inviteId}`, { withCredentials: true });
+      set({ loading: false });
+    } catch (err) {
+      set({ error: err.response?.data?.message || "Failed to cancel invite", loading: false });
+      throw err;
+    }
+  },
+
+  resendInvite: async (inviteId) => {
+    set({ loading: true, error: null });
+    try {
+      await axios.post(`/invite/${inviteId}/resend`, {}, { withCredentials: true });
+      set({ loading: false });
+    } catch (err) {
+      set({ error: err.response?.data?.message || "Failed to resend invite", loading: false });
+      throw err;
+    }
+  },
+
   setCurrentWorkspace: (workspace) => set({ currentWorkspace: workspace }),
   clearError: () => set({ error: null }),
 }));

@@ -11,10 +11,12 @@ import {
   Feather,
   Loader2,
   Plus,
-  Briefcase
+  Briefcase,
+  Bell
 } from 'lucide-react'
 import { useAuth } from '../../store/authStore'
 import { useWorkspace } from '../../store/workspaceStore'
+import { useNotification } from '../../store/notificationStore'
 
 const links = [
   { to: '/dashboard/dashboardhome', label: 'Home', icon: LayoutDashboard },
@@ -35,6 +37,13 @@ function Sidebar() {
   const fetchWorkspaces = useWorkspace((state) => state.fetchWorkspaces)
   const createWorkspace = useWorkspace((state) => state.createWorkspace)
   const loading = useWorkspace((state) => state.loading)
+
+  const unreadCount = useNotification((state) => state.unreadCount)
+  const getUnreadCount = useNotification((state) => state.getUnreadCount)
+
+  useEffect(() => {
+    getUnreadCount()
+  }, [getUnreadCount])
 
   const [showNewInput, setShowNewInput] = useState(false)
   const [newWsName, setNewWsName] = useState('')
@@ -65,9 +74,19 @@ function Sidebar() {
   return (
     <aside className="w-60 shrink-0 h-screen sticky top-0 border-r border-[#e8e8ed] bg-white flex flex-col">
       {/* Brand */}
-      <div className="flex items-center gap-2 px-5 h-[52px] border-b border-[#e8e8ed]">
-        <Feather className="w-4 h-4 text-[#0066cc]" strokeWidth={2.5} />
-        <span className="text-sm font-semibold text-[#1d1d1f] tracking-tight">Taskify</span>
+      <div className="flex items-center justify-between px-5 h-[52px] border-b border-[#e8e8ed]">
+        <div className="flex items-center gap-2">
+          <Feather className="w-4 h-4 text-[#0066cc]" strokeWidth={2.5} />
+          <span className="text-sm font-semibold text-[#1d1d1f] tracking-tight">Taskify</span>
+        </div>
+        <NavLink to="/dashboard/notifications" className="relative p-1.5 hover:bg-[#f5f5f7] rounded-lg transition-colors">
+          <Bell className="w-4 h-4 text-[#6e6e73]" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#ff3b30] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </NavLink>
       </div>
 
       {/* User pill */}

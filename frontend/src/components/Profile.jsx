@@ -10,11 +10,8 @@ import {
   Loader2,
   Trash2,
   ArrowLeft,
-  //  MapPin, Phone,
   Briefcase,
-  // CheckCircle,
   Clock,
-  // Globe, Link, MessageSquare, MoreHorizontal, ChevronDown,
   X,
 } from "lucide-react";
 import {
@@ -23,7 +20,6 @@ import {
   secondaryBtn,
   cardClass,
   headingClass,
-  // bodyText,
   labelClass,
   pageTitleClass,
 } from "../styles/common";
@@ -159,18 +155,6 @@ function Profile() {
                 value={formData.lastName}
                 onChange={(e) =>
                   setFormData({ ...formData, lastName: e.target.value })
-                }
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Avatar URL</label>
-              <input
-                type="url"
-                name="avatarUrl"
-                value={formData.avatarUrl}
-                onChange={(e) =>
-                  setFormData({ ...formData, avatarUrl: e.target.value })
                 }
                 className={inputClass}
               />
