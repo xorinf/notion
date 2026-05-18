@@ -1,5 +1,5 @@
 import express from 'express'
-import { listModel } from '../models/mainModels.js'
+import { listModel, boardModel } from '../models/mainModels.js'
 import { verifyToken } from '../middleware/verifyToken.js'
 
 export const listAPP = express.Router()
@@ -10,6 +10,8 @@ listAPP.post('/', verifyToken(), async(req,res,next)=>{
         const newList = req.body
         newList.createdBy = req.user.id
         const newListDoc = await listModel.create(newList)
+        // push list into the board's lists array
+        await boardModel.findByIdAndUpdate(newList.board, { $push: { lists: newListDoc._id } })
         res.status(201).json({message:"list created",payload:newListDoc})
     } catch(err) { next(err) }
 })
