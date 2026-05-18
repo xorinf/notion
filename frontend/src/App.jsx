@@ -14,6 +14,7 @@ import Search from "./components/Search";
 import HomeDashBoard from "./components/HomeDashBoard";
 import Workspace from "./components/Workspace";
 import ChangePassword from "./components/ChangePassword";
+import Board from "./components/Board"
 
 const router = createBrowserRouter([
   {
@@ -38,6 +39,7 @@ const router = createBrowserRouter([
       { path: "search", element: <Search /> },
       { path: "dashboardhome", element: <HomeDashBoard /> },
       { path: "change-password", element: <ChangePassword /> },
+      { path: "workspace/:workspaceId/board/:boardId", element: <Board /> }
     ],
   },
 ]);
