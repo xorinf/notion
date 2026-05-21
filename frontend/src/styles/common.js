@@ -117,3 +117,74 @@ export const commentUserRow = "flex items-center gap-3";
 
 // ─── Divider ──────────────────────────────────────────
 export const divider = "border-t border-[#dadce0] my-10";
+
+// ─── Section Header ──────────────────────────────────
+export const sectionHeader =
+  "flex items-center justify-between mb-6";
+export const sectionTitle =
+  "text-lg font-semibold text-[#1d1d1f] tracking-tight";
+
+// ─── Filter / Pill Buttons ───────────────────────────
+export const filterBtn =
+  "text-xs font-medium px-3.5 py-1.5 rounded-full border border-[#dadce0] text-[#5f6368] hover:bg-[#f1f3f4] transition-colors cursor-pointer whitespace-nowrap";
+export const filterBtnActive =
+  "text-xs font-medium px-3.5 py-1.5 rounded-full bg-[#1a73e8] text-white border border-[#1a73e8] cursor-pointer whitespace-nowrap";
+
+// ─── Badges ──────────────────────────────────────────
+export const badgeClass =
+  "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full";
+export const badgeBlue = "bg-[#1a73e8]/10 text-[#1a73e8]";
+export const badgeGreen = "bg-[#34a853]/10 text-[#137333]";
+export const badgeRed = "bg-[#ff3b30]/10 text-[#cc2f26]";
+export const badgeOrange = "bg-[#fb8c00]/10 text-[#e65100]";
+export const badgePurple = "bg-[#8e24aa]/10 text-[#8e24aa]";
+
+// ─── Task Columns ────────────────────────────────────
+export const taskColumn =
+  "bg-white rounded-2xl border border-[#dadce0] shadow-sm flex flex-col min-h-[300px]";
+export const taskColumnHeader =
+  "px-4 py-3 border-b border-[#f1f3f4] flex items-center justify-between";
+export const taskColumnTitle =
+  "text-sm font-semibold text-[#1d1d1f] flex items-center gap-2";
+export const taskColumnCount =
+  "text-xs text-[#80868b] font-normal ml-1";
+export const taskCard =
+  "bg-white border border-[#e8e8ed] hover:shadow-md hover:border-[#1a73e8]/30 rounded-xl p-3 transition-all cursor-pointer group";
+
+// ─── Timeline (Journal) ─────────────────────────────
+export const timelineItem =
+  "flex gap-4 relative";
+export const timelineDot =
+  "w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10";
+export const timelineConnector =
+  "absolute left-4 top-8 bottom-0 w-px bg-[#dadce0]";
+export const timelineContent =
+  "flex-1 pb-6";
+export const timelineDateGroup =
+  "text-xs font-semibold uppercase tracking-widest text-[#80868b] mb-4 mt-2";
+
+// ─── Modal ───────────────────────────────────────────
+export const modalOverlay =
+  "fixed inset-0 bg-[#202124]/40 backdrop-blur-sm z-50 flex items-center justify-center p-4";
+export const modalContent =
+  "bg-white rounded-[24px] w-full shadow-2xl overflow-hidden flex flex-col";
+export const modalHeader =
+  "flex items-center justify-between px-6 py-4 border-b border-[#dadce0]";
+export const modalBody =
+  "flex-1 overflow-y-auto p-6";
+
+// ─── Tabs ────────────────────────────────────────────
+export const tabBtn =
+  "pb-2.5 px-1 text-sm font-medium transition-colors border-b-2 border-transparent text-[#5f6368] hover:text-[#1d1d1f] flex items-center gap-1.5";
+export const tabBtnActive =
+  "pb-2.5 px-1 text-sm font-medium transition-colors border-b-2 border-[#1a73e8] text-[#1a73e8] flex items-center gap-1.5";
+
+// ─── Empty State ─────────────────────────────────────
+export const emptyStateCard =
+  "bg-white rounded-2xl p-10 text-center border border-dashed border-[#dadce0] shadow-sm";
+export const emptyStateIcon =
+  "w-16 h-16 text-[#dadce0] mx-auto mb-4";
+export const emptyStateTitle =
+  "text-lg font-medium text-[#202124] mb-2";
+export const emptyStateText =
+  "text-sm text-[#80868b] max-w-md mx-auto";

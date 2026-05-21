@@ -2,45 +2,42 @@ import { useState, useEffect } from 'react'
 import { useBoard } from '../../store/boardStore'
 import axios from 'axios'
 import {
-  X, Loader2, Tag, CheckSquare, MessageSquare, Trash2, Calendar, Flag, Plus, Paperclip, Download, FileText
+  X, Loader2, Tag, CheckSquare, MessageSquare, Trash2, Calendar, Flag, Plus,
+  Paperclip, Download, FileText, Users, Archive, CheckCircle2, Circle
 } from 'lucide-react'
-import { inputClass, labelClass, primaryBtn, secondaryBtn } from '../styles/common'
+import { inputClass, labelClass, primaryBtn, secondaryBtn, badgeClass, modalOverlay } from '../styles/common'
 
 const PRIORITY_OPTIONS = ['LOW', 'MEDIUM', 'HIGH', 'URGENT']
 const PRIORITY_COLORS = {
-  LOW: '#2e7d32',
-  MEDIUM: '#e65100',
-  HIGH: '#c62828',
-  URGENT: '#f44336',
+  LOW: '#2e7d32', MEDIUM: '#e65100', HIGH: '#c62828', URGENT: '#f44336',
 }
-
 const LABEL_PRESETS = [
-  { name: 'Bug', color: '#e53935' },
-  { name: 'Feature', color: '#1e88e5' },
-  { name: 'Enhancement', color: '#43a047' },
-  { name: 'Design', color: '#8e24aa' },
-  { name: 'Docs', color: '#fb8c00' },
-  { name: 'Testing', color: '#00897b' },
+  { name: 'Bug', color: '#e53935' }, { name: 'Feature', color: '#1e88e5' },
+  { name: 'Enhancement', color: '#43a047' }, { name: 'Design', color: '#8e24aa' },
+  { name: 'Docs', color: '#fb8c00' }, { name: 'Testing', color: '#00897b' },
 ]
 
 function CardModal({ card, onClose, onUpdated }) {
-  const updateCard = useBoard(state => state.updateCard)
-  const deleteCard = useBoard(state => state.deleteCard)
-  const addComment = useBoard(state => state.addComment)
-  const deleteComment = useBoard(state => state.deleteComment)
-  const addChecklistItem = useBoard(state => state.addChecklistItem)
-  const toggleChecklistItem = useBoard(state => state.toggleChecklistItem)
-  const deleteChecklistItem = useBoard(state => state.deleteChecklistItem)
-  const addLabel = useBoard(state => state.addLabel)
-  const removeLabel = useBoard(state => state.removeLabel)
-  const uploadAttachment = useBoard(state => state.uploadAttachment)
-  const deleteAttachment = useBoard(state => state.deleteAttachment)
+  const updateCard = useBoard(s => s.updateCard)
+  const deleteCard = useBoard(s => s.deleteCard)
+  const addComment = useBoard(s => s.addComment)
+  const deleteComment = useBoard(s => s.deleteComment)
+  const addChecklistItem = useBoard(s => s.addChecklistItem)
+  const toggleChecklistItem = useBoard(s => s.toggleChecklistItem)
+  const deleteChecklistItem = useBoard(s => s.deleteChecklistItem)
+  const addLabel = useBoard(s => s.addLabel)
+  const removeLabel = useBoard(s => s.removeLabel)
+  const uploadAttachment = useBoard(s => s.uploadAttachment)
+  const deleteAttachment = useBoard(s => s.deleteAttachment)
+  const completeCard = useBoard(s => s.completeCard)
+  const incompleteCard = useBoard(s => s.incompleteCard)
+  const archiveCard = useBoard(s => s.archiveCard)
+  const assignCardMember = useBoard(s => s.assignCardMember)
+  const removeCardMember = useBoard(s => s.removeCardMember)
 
   const [detail, setDetail] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-
-  // Form states
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState('MEDIUM')
@@ -49,10 +46,9 @@ function CardModal({ card, onClose, onUpdated }) {
   const [newCheckItem, setNewCheckItem] = useState('')
   const [showLabelPicker, setShowLabelPicker] = useState(false)
   const [activeTab, setActiveTab] = useState('details')
+  const [memberEmail, setMemberEmail] = useState('')
 
-  useEffect(() => {
-    fetchCard()
-  }, [card._id])
+  useEffect(() => { fetchCard() }, [card._id])
 
   const fetchCard = async () => {
     try {
@@ -64,141 +60,143 @@ function CardModal({ card, onClose, onUpdated }) {
       setDescription(c.description || '')
       setPriority(c.priority || 'MEDIUM')
       setDueDate(c.dueDate ? c.dueDate.split('T')[0] : '')
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+    } catch (err) { console.error(err) }
+    finally { setLoading(false) }
   }
 
   const handleSave = async () => {
     setSaving(true)
     try {
       await updateCard(card._id, { title, description, priority, dueDate: dueDate || null })
-      await fetchCard()
-      onUpdated?.()
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setSaving(false)
-    }
+      await fetchCard(); onUpdated?.()
+    } catch (err) { console.error(err) }
+    finally { setSaving(false) }
   }
 
   const handleDelete = async () => {
     if (!confirm('Delete this card?')) return
     await deleteCard(card._id, card.list?._id || card.list)
-    onUpdated?.()
-    onClose()
+    onUpdated?.(); onClose()
+  }
+
+  const handleToggleComplete = async () => {
+    setSaving(true)
+    try {
+      if (detail?.isCompleted) await incompleteCard(card._id)
+      else await completeCard(card._id)
+      await fetchCard(); onUpdated?.()
+    } catch (err) { console.error(err) }
+    finally { setSaving(false) }
+  }
+
+  const handleArchive = async () => {
+    if (!confirm('Archive this card?')) return
+    setSaving(true)
+    try {
+      await archiveCard(card._id)
+      onUpdated?.(); onClose()
+    } catch (err) { console.error(err) }
+    finally { setSaving(false) }
   }
 
   const handleAddComment = async (e) => {
     e.preventDefault()
     if (!newComment.trim()) return
     await addComment(card._id, newComment)
-    setNewComment('')
-    await fetchCard()
+    setNewComment(''); await fetchCard()
   }
 
   const handleDeleteComment = async (commentId) => {
-    await deleteComment(card._id, commentId)
-    await fetchCard()
+    await deleteComment(card._id, commentId); await fetchCard()
   }
 
   const handleAddCheckItem = async (e) => {
     e.preventDefault()
     if (!newCheckItem.trim()) return
     await addChecklistItem(card._id, newCheckItem)
-    setNewCheckItem('')
-    await fetchCard()
-    onUpdated?.()
+    setNewCheckItem(''); await fetchCard(); onUpdated?.()
   }
 
   const handleToggleCheck = async (itemId, completed) => {
     await toggleChecklistItem(card._id, itemId, !completed)
-    await fetchCard()
-    onUpdated?.()
+    await fetchCard(); onUpdated?.()
   }
 
   const handleDeleteCheckItem = async (itemId) => {
-    await deleteChecklistItem(card._id, itemId)
-    await fetchCard()
-    onUpdated?.()
+    await deleteChecklistItem(card._id, itemId); await fetchCard(); onUpdated?.()
   }
 
   const handleAddLabel = async (preset) => {
     await addLabel(card._id, preset.name, preset.color)
-    setShowLabelPicker(false)
-    await fetchCard()
-    onUpdated?.()
+    setShowLabelPicker(false); await fetchCard(); onUpdated?.()
   }
 
   const handleRemoveLabel = async (labelId) => {
-    await removeLabel(card._id, labelId)
-    await fetchCard()
-    onUpdated?.()
+    await removeLabel(card._id, labelId); await fetchCard(); onUpdated?.()
   }
+
   const handleUploadAttachment = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     setSaving(true)
-    try {
-      await uploadAttachment(card._id, file)
-      await fetchCard()
-      onUpdated?.()
-    } catch (err) {
-      console.error(err)
-      alert('Failed to upload attachment')
-    } finally {
-      setSaving(false)
-    }
+    try { await uploadAttachment(card._id, file); await fetchCard(); onUpdated?.() }
+    catch (err) { console.error(err); alert('Failed to upload attachment') }
+    finally { setSaving(false) }
   }
 
   const handleDeleteAttachment = async (attachmentId) => {
     if (!confirm('Delete this attachment?')) return
     setSaving(true)
-    try {
-      await deleteAttachment(attachmentId)
-      await fetchCard()
-      onUpdated?.()
-    } catch (err) {
-      console.error(err)
-      alert('Failed to delete attachment')
-    } finally {
-      setSaving(false)
-    }
+    try { await deleteAttachment(attachmentId); await fetchCard(); onUpdated?.() }
+    catch (err) { console.error(err); alert('Failed to delete attachment') }
+    finally { setSaving(false) }
   }
+
+  const handleRemoveMember = async (userId) => {
+    setSaving(true)
+    try { await removeCardMember(card._id, userId); await fetchCard(); onUpdated?.() }
+    catch (err) { console.error(err) }
+    finally { setSaving(false) }
+  }
+
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-[#202124]/40 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className={modalOverlay}>
         <Loader2 className="w-8 h-8 text-[#1a73e8] animate-spin" />
       </div>
     )
   }
-
   if (!detail) return null
 
   const checklist = detail.checklist || []
   const comments = detail.comments || []
   const labels = detail.labels || []
   const attachments = detail.attachments || []
+  const members = detail.members || []
   const checkDone = checklist.filter(c => c.completed).length
   const checkTotal = checklist.length
 
   return (
-    <div className="fixed inset-0 bg-[#202124]/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className={modalOverlay}>
       <div className="bg-white rounded-[24px] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#dadce0]">
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="w-2 h-8 rounded-full" style={{ backgroundColor: PRIORITY_COLORS[detail.priority] || '#80868b' }} />
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onBlur={handleSave}
-              className="text-lg font-semibold text-[#1d1d1f] bg-transparent focus:outline-none focus:border-b focus:border-[#1a73e8] w-full"
+            <button onClick={handleToggleComplete} className="shrink-0" title={detail.isCompleted ? 'Mark incomplete' : 'Mark complete'}>
+              {detail.isCompleted
+                ? <CheckCircle2 className="w-5 h-5 text-[#34a853]" />
+                : <Circle className="w-5 h-5 text-[#dadce0] hover:text-[#1a73e8] transition-colors" />
+              }
+            </button>
+            <div className="w-2 h-8 rounded-full shrink-0" style={{ backgroundColor: PRIORITY_COLORS[detail.priority] || '#80868b' }} />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} onBlur={handleSave}
+              className={`text-lg font-semibold text-[#1d1d1f] bg-transparent focus:outline-none focus:border-b focus:border-[#1a73e8] w-full ${detail.isCompleted ? 'line-through opacity-60' : ''}`}
             />
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button onClick={handleArchive} className="p-2 hover:bg-[#fb8c00]/10 rounded-lg text-[#fb8c00] transition-colors" title="Archive">
+              <Archive className="w-4 h-4" />
+            </button>
             <button onClick={handleDelete} className="p-2 hover:bg-[#ff3b30]/10 rounded-lg text-[#ff3b30] transition-colors" title="Delete">
               <Trash2 className="w-4 h-4" />
             </button>
@@ -213,20 +211,16 @@ function CardModal({ card, onClose, onUpdated }) {
           {[
             { key: 'details', label: 'Details', icon: Flag },
             { key: 'checklist', label: `Checklist ${checkTotal ? `(${checkDone}/${checkTotal})` : ''}`, icon: CheckSquare },
-            { key: 'attachments', label: `Attachments (${attachments.length})`, icon: Paperclip },
+            { key: 'members', label: `Members (${members.length})`, icon: Users },
+            { key: 'attachments', label: `Files (${attachments.length})`, icon: Paperclip },
             { key: 'comments', label: `Comments (${comments.length})`, icon: MessageSquare },
           ].map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               className={`pb-2.5 px-1 text-xs font-medium transition-colors border-b-2 flex items-center gap-1.5 ${
-                activeTab === tab.key
-                  ? 'border-[#1a73e8] text-[#1a73e8]'
-                  : 'border-transparent text-[#5f6368] hover:text-[#1d1d1f]'
+                activeTab === tab.key ? 'border-[#1a73e8] text-[#1a73e8]' : 'border-transparent text-[#5f6368] hover:text-[#1d1d1f]'
               }`}
             >
-              <tab.icon className="w-3.5 h-3.5" />
-              {tab.label}
+              <tab.icon className="w-3.5 h-3.5" />{tab.label}
             </button>
           ))}
         </div>
@@ -236,46 +230,23 @@ function CardModal({ card, onClose, onUpdated }) {
           {/* Details Tab */}
           {activeTab === 'details' && (
             <div className="space-y-5">
-              {/* Description */}
               <div>
                 <label className={labelClass}>Description</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  onBlur={handleSave}
-                  placeholder="Add a description..."
-                  className={`${inputClass} min-h-[80px] resize-none !text-sm`}
-                />
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} onBlur={handleSave}
+                  placeholder="Add a description..." className={`${inputClass} min-h-[80px] resize-none !text-sm`} />
               </div>
-
-              {/* Priority + Due Date row */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>Priority</label>
-                  <select
-                    value={priority}
-                    onChange={(e) => { setPriority(e.target.value); }}
-                    onBlur={handleSave}
-                    className={`${inputClass} !text-sm`}
-                  >
-                    {PRIORITY_OPTIONS.map(p => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
+                  <select value={priority} onChange={(e) => setPriority(e.target.value)} onBlur={handleSave} className={`${inputClass} !text-sm`}>
+                    {PRIORITY_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className={labelClass}>Due Date</label>
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    onBlur={handleSave}
-                    className={`${inputClass} !text-sm`}
-                  />
+                  <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} onBlur={handleSave} className={`${inputClass} !text-sm`} />
                 </div>
               </div>
-
-              {/* Labels */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className={`${labelClass} !mb-0`}>Labels</label>
@@ -285,15 +256,9 @@ function CardModal({ card, onClose, onUpdated }) {
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {labels.map((label) => (
-                    <span
-                      key={label._id}
-                      className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 cursor-pointer hover:opacity-80"
-                      style={{ backgroundColor: label.color + '22', color: label.color }}
-                      onClick={() => handleRemoveLabel(label._id)}
-                      title="Click to remove"
-                    >
-                      {label.name}
-                      <X className="w-2.5 h-2.5" />
+                    <span key={label._id} className={`${badgeClass} inline-flex items-center gap-1.5 cursor-pointer hover:opacity-80`}
+                      style={{ backgroundColor: label.color + '22', color: label.color }} onClick={() => handleRemoveLabel(label._id)} title="Click to remove">
+                      {label.name}<X className="w-2.5 h-2.5" />
                     </span>
                   ))}
                   {labels.length === 0 && <span className="text-xs text-[#80868b]">No labels</span>}
@@ -301,12 +266,9 @@ function CardModal({ card, onClose, onUpdated }) {
                 {showLabelPicker && (
                   <div className="mt-2 flex flex-wrap gap-1.5 p-3 bg-[#f8f9fa] rounded-xl border border-[#dadce0]">
                     {LABEL_PRESETS.filter(p => !labels.some(l => l.name === p.name)).map((preset) => (
-                      <button
-                        key={preset.name}
-                        onClick={() => handleAddLabel(preset)}
-                        className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full hover:opacity-80 transition-opacity"
-                        style={{ backgroundColor: preset.color + '22', color: preset.color }}
-                      >
+                      <button key={preset.name} onClick={() => handleAddLabel(preset)}
+                        className={`${badgeClass} hover:opacity-80 transition-opacity`}
+                        style={{ backgroundColor: preset.color + '22', color: preset.color }}>
                         {preset.name}
                       </button>
                     ))}
@@ -319,53 +281,66 @@ function CardModal({ card, onClose, onUpdated }) {
           {/* Checklist Tab */}
           {activeTab === 'checklist' && (
             <div className="space-y-3">
-              {/* Progress Bar */}
               {checkTotal > 0 && (
                 <div className="mb-4">
                   <div className="flex justify-between text-xs text-[#5f6368] mb-1">
-                    <span>Progress</span>
-                    <span>{Math.round((checkDone / checkTotal) * 100)}%</span>
+                    <span>Progress</span><span>{Math.round((checkDone / checkTotal) * 100)}%</span>
                   </div>
                   <div className="w-full h-1.5 bg-[#f1f3f4] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[#1a73e8] rounded-full transition-all duration-300"
-                      style={{ width: `${(checkDone / checkTotal) * 100}%` }}
-                    />
+                    <div className="h-full bg-[#1a73e8] rounded-full transition-all duration-300" style={{ width: `${(checkDone / checkTotal) * 100}%` }} />
                   </div>
                 </div>
               )}
-
               {checklist.map((item) => (
                 <div key={item._id} className="flex items-center gap-3 group">
-                  <button
-                    onClick={() => handleToggleCheck(item._id, item.completed)}
+                  <button onClick={() => handleToggleCheck(item._id, item.completed)}
                     className={`w-4.5 h-4.5 rounded border-2 flex items-center justify-center transition-colors shrink-0 ${
                       item.completed ? 'bg-[#1a73e8] border-[#1a73e8] text-white' : 'border-[#dadce0] hover:border-[#1a73e8]'
-                    }`}
-                  >
+                    }`}>
                     {item.completed && <span className="text-[10px]">✓</span>}
                   </button>
-                  <span className={`text-sm flex-1 ${item.completed ? 'line-through text-[#80868b]' : 'text-[#1d1d1f]'}`}>
-                    {item.text}
-                  </span>
-                  <button
-                    onClick={() => handleDeleteCheckItem(item._id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[#ff3b30]/10 rounded text-[#ff3b30] transition-all"
-                  >
+                  <span className={`text-sm flex-1 ${item.completed ? 'line-through text-[#80868b]' : 'text-[#1d1d1f]'}`}>{item.text}</span>
+                  <button onClick={() => handleDeleteCheckItem(item._id)} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[#ff3b30]/10 rounded text-[#ff3b30] transition-all">
                     <Trash2 className="w-3 h-3" />
                   </button>
                 </div>
               ))}
-
               <form onSubmit={handleAddCheckItem} className="flex gap-2 mt-2">
-                <input
-                  value={newCheckItem}
-                  onChange={(e) => setNewCheckItem(e.target.value)}
-                  placeholder="Add item..."
-                  className={`${inputClass} !text-sm flex-1`}
-                />
+                <input value={newCheckItem} onChange={(e) => setNewCheckItem(e.target.value)} placeholder="Add item..." className={`${inputClass} !text-sm flex-1`} />
                 <button type="submit" className="text-xs bg-[#1a73e8] text-white px-3 py-2 rounded-xl hover:bg-[#1558b0] shrink-0">Add</button>
               </form>
+            </div>
+          )}
+
+          {/* Members Tab */}
+          {activeTab === 'members' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-[#80868b]">Members assigned to this card can be managed from the board's workspace members.</p>
+              </div>
+              {members.length === 0 ? (
+                <p className="text-sm text-[#80868b] text-center py-6">No members assigned yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {members.map(m => (
+                    <div key={m._id} className="flex items-center justify-between p-3 bg-[#f8f9fa] rounded-xl group">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-[#1a73e8]/10 text-[#1a73e8] flex items-center justify-center text-xs font-bold">
+                          {m.firstName?.[0]?.toUpperCase() || '?'}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-[#1d1d1f]">{m.firstName} {m.lastName}</p>
+                          <p className="text-[10px] text-[#80868b]">{m.email}</p>
+                        </div>
+                      </div>
+                      <button onClick={() => handleRemoveMember(m._id)}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-[#ff3b30]/10 rounded-lg text-[#ff3b30] transition-all" title="Remove">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -374,17 +349,10 @@ function CardModal({ card, onClose, onUpdated }) {
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <label className="text-xs bg-[#f1f3f4] text-[#1d1d1f] font-medium px-4 py-2 rounded-xl hover:bg-[#e8eaed] cursor-pointer inline-flex items-center gap-2 transition-colors">
-                  <Paperclip className="w-4 h-4" />
-                  Upload File
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    onChange={handleUploadAttachment}
-                    disabled={saving}
-                  />
+                  <Paperclip className="w-4 h-4" /> Upload File
+                  <input type="file" className="hidden" onChange={handleUploadAttachment} disabled={saving} />
                 </label>
               </div>
-
               {attachments.length === 0 ? (
                 <p className="text-sm text-[#80868b] text-center py-6">No attachments yet.</p>
               ) : (
@@ -394,25 +362,15 @@ function CardModal({ card, onClose, onUpdated }) {
                       <div className="w-10 h-10 rounded bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
                         {att.fileType?.includes('image') ? (
                           <img src={att.url} alt={att.filename} className="w-full h-full object-cover rounded" />
-                        ) : (
-                          <FileText className="w-5 h-5" />
-                        )}
+                        ) : ( <FileText className="w-5 h-5" /> )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <a href={att.url} target="_blank" rel="noreferrer" className="text-sm font-medium text-[#1d1d1f] hover:text-[#1a73e8] truncate block">
-                          {att.filename}
-                        </a>
-                        <p className="text-[10px] text-[#80868b] mt-0.5">
-                          {new Date(att.createdAt).toLocaleDateString()}
-                        </p>
+                        <a href={att.url} target="_blank" rel="noreferrer" className="text-sm font-medium text-[#1d1d1f] hover:text-[#1a73e8] truncate block">{att.filename}</a>
+                        <p className="text-[10px] text-[#80868b] mt-0.5">{new Date(att.createdAt).toLocaleDateString()}</p>
                       </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <a href={att.url} download className="p-1.5 hover:bg-[#f1f3f4] rounded text-[#5f6368]">
-                          <Download className="w-3.5 h-3.5" />
-                        </a>
-                        <button onClick={() => handleDeleteAttachment(att._id)} className="p-1.5 hover:bg-red-50 rounded text-red-500">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <a href={att.url} download className="p-1.5 hover:bg-[#f1f3f4] rounded text-[#5f6368]"><Download className="w-3.5 h-3.5" /></a>
+                        <button onClick={() => handleDeleteAttachment(att._id)} className="p-1.5 hover:bg-red-50 rounded text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
                     </div>
                   ))}
@@ -425,19 +383,10 @@ function CardModal({ card, onClose, onUpdated }) {
           {activeTab === 'comments' && (
             <div className="space-y-4">
               <form onSubmit={handleAddComment} className="flex gap-2">
-                <input
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Write a comment..."
-                  className={`${inputClass} !text-sm flex-1`}
-                />
+                <input value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Write a comment..." className={`${inputClass} !text-sm flex-1`} />
                 <button type="submit" className="text-xs bg-[#1a73e8] text-white px-3 py-2 rounded-xl hover:bg-[#1558b0] shrink-0">Post</button>
               </form>
-
-              {comments.length === 0 && (
-                <p className="text-sm text-[#80868b] text-center py-6">No comments yet.</p>
-              )}
-
+              {comments.length === 0 && <p className="text-sm text-[#80868b] text-center py-6">No comments yet.</p>}
               {comments.map((comment) => (
                 <div key={comment._id} className="flex gap-3 group">
                   <div className="w-7 h-7 rounded-full bg-[#1a73e8]/10 text-[#1a73e8] flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
@@ -445,19 +394,12 @@ function CardModal({ card, onClose, onUpdated }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-xs font-semibold text-[#1d1d1f]">
-                        {comment.author?.firstName} {comment.author?.lastName}
-                      </span>
-                      <span className="text-[10px] text-[#80868b]">
-                        {new Date(comment.createdAt).toLocaleString()}
-                      </span>
+                      <span className="text-xs font-semibold text-[#1d1d1f]">{comment.author?.firstName} {comment.author?.lastName}</span>
+                      <span className="text-[10px] text-[#80868b]">{new Date(comment.createdAt).toLocaleString()}</span>
                     </div>
                     <p className="text-sm text-[#3c4043] leading-relaxed">{comment.text}</p>
                   </div>
-                  <button
-                    onClick={() => handleDeleteComment(comment._id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[#ff3b30]/10 rounded text-[#ff3b30] transition-all self-start"
-                  >
+                  <button onClick={() => handleDeleteComment(comment._id)} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[#ff3b30]/10 rounded text-[#ff3b30] transition-all self-start">
                     <Trash2 className="w-3 h-3" />
                   </button>
                 </div>
@@ -468,10 +410,11 @@ function CardModal({ card, onClose, onUpdated }) {
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-[#dadce0] flex items-center justify-between bg-[#f8f9fa]">
-          <span className="text-[10px] text-[#80868b]">
-            Created {new Date(detail.createdAt).toLocaleDateString()}
-          </span>
-          {saving && <Loader2 className="w-3.5 h-3.5 text-[#1a73e8] animate-spin" />}
+          <span className="text-[10px] text-[#80868b]">Created {new Date(detail.createdAt).toLocaleDateString()}</span>
+          <div className="flex items-center gap-2">
+            {detail.isCompleted && <span className="text-[10px] font-semibold text-[#34a853] bg-[#34a853]/10 px-2 py-0.5 rounded-full">Completed</span>}
+            {saving && <Loader2 className="w-3.5 h-3.5 text-[#1a73e8] animate-spin" />}
+          </div>
         </div>
       </div>
     </div>

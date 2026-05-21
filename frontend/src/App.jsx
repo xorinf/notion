@@ -16,6 +16,7 @@ import Workspace from "./components/Workspace";
 import ChangePassword from "./components/ChangePassword";
 import BoardView from "./components/BoardView";
 import Notification from "./components/Notification";
+import Logout from "./components/Logout";
 
 const router = createBrowserRouter([
   {
@@ -43,6 +44,10 @@ const router = createBrowserRouter([
       { path: "board/:boardId", element: <BoardView /> },
       { path: "notifications", element: <Notification /> },
     ],
+  },
+  {
+    path: "logout",
+    element: <Logout />,
   },
 ]);
 

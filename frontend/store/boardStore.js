@@ -164,17 +164,14 @@ export const useBoard = create((set, get) => ({
   },
 
   reorderList: async (id, position) => {
-    set({ loading: true, error: null });
+    // No loading state — optimistic update already applied in BoardView
     try {
       await axios.put(`/list/${id}/reorder`, { position }, { withCredentials: true });
-      // Re-fetch the board to get updated state from DB if necessary,
-      // but we might optimistically update in the UI. For now, fetch to sync.
+    } catch (err) {
+      // Rollback: re-fetch board to restore correct state
       const boardId = get().currentBoard?._id;
       if (boardId) await get().getBoardById(boardId);
-      else set({ loading: false });
-    } catch (err) {
-      set({ error: err.response?.data?.message || "Failed to reorder list", loading: false });
-      throw err;
+      set({ error: err.response?.data?.message || "Failed to reorder list" });
     }
   },
 
@@ -252,30 +249,26 @@ export const useBoard = create((set, get) => ({
   },
 
   moveCard: async (id, targetList, position) => {
-    set({ loading: true, error: null });
+    // No loading state — optimistic update already applied in BoardView
     try {
       await axios.put(`/card/${id}/move`, { targetList, position }, { withCredentials: true });
-      // Re-fetch the board to get updated state
+    } catch (err) {
+      // Rollback: re-fetch board to restore correct state
       const boardId = get().currentBoard?._id;
       if (boardId) await get().getBoardById(boardId);
-      else set({ loading: false });
-    } catch (err) {
-      set({ error: err.response?.data?.message || "Failed to move card", loading: false });
-      throw err;
+      set({ error: err.response?.data?.message || "Failed to move card" });
     }
   },
 
   reorderCard: async (id, position) => {
-    set({ loading: true, error: null });
+    // No loading state — optimistic update already applied in BoardView
     try {
       await axios.put(`/card/${id}/reorder`, { position }, { withCredentials: true });
-      // Re-fetch the board to get updated state
+    } catch (err) {
+      // Rollback: re-fetch board to restore correct state
       const boardId = get().currentBoard?._id;
       if (boardId) await get().getBoardById(boardId);
-      else set({ loading: false });
-    } catch (err) {
-      set({ error: err.response?.data?.message || "Failed to reorder card", loading: false });
-      throw err;
+      set({ error: err.response?.data?.message || "Failed to reorder card" });
     }
   },
 
@@ -359,6 +352,169 @@ export const useBoard = create((set, get) => ({
   deleteAttachment: async (attachmentId) => {
     try {
       await axios.delete(`/attachment/${attachmentId}`, { withCredentials: true });
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  // ── Board Archive / Unarchive ──────────────────────────
+
+  archiveBoard: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      await axios.put(`/board/${id}/archive`, {}, { withCredentials: true });
+      set((state) => ({
+        boards: state.boards.filter((b) => b._id !== id),
+        currentBoard: state.currentBoard?._id === id ? null : state.currentBoard,
+        loading: false,
+      }));
+    } catch (err) {
+      set({ error: err.response?.data?.message || "Failed to archive board", loading: false });
+      throw err;
+    }
+  },
+
+  unarchiveBoard: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await axios.put(`/board/${id}/unarchive`, {}, { withCredentials: true });
+      set({ loading: false });
+      return res.data.payload;
+    } catch (err) {
+      set({ error: err.response?.data?.message || "Failed to unarchive board", loading: false });
+      throw err;
+    }
+  },
+
+  // ── Board Members ──────────────────────────────────────
+
+  addBoardMember: async (boardId, userId, role = "EDIT") => {
+    try {
+      const res = await axios.post(`/board/${boardId}/members`, { userId, role }, { withCredentials: true });
+      set((state) => ({
+        currentBoard: state.currentBoard?._id === boardId ? res.data.payload : state.currentBoard,
+      }));
+      return res.data.payload;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  updateBoardMemberRole: async (boardId, userId, role) => {
+    try {
+      const res = await axios.put(`/board/${boardId}/members/${userId}`, { role }, { withCredentials: true });
+      set((state) => ({
+        currentBoard: state.currentBoard?._id === boardId ? res.data.payload : state.currentBoard,
+      }));
+      return res.data.payload;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  removeBoardMember: async (boardId, userId) => {
+    try {
+      const res = await axios.delete(`/board/${boardId}/members/${userId}`, { withCredentials: true });
+      set((state) => ({
+        currentBoard: state.currentBoard?._id === boardId ? res.data.payload : state.currentBoard,
+      }));
+      return res.data.payload;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  // ── Board Templates ────────────────────────────────────
+
+  saveAsTemplate: async (boardId) => {
+    try {
+      const res = await axios.post(`/board/${boardId}/save-template`, {}, { withCredentials: true });
+      return res.data.payload;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  createFromTemplate: async (templateId, title, workspaceId) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await axios.post("/board/from-template", { templateId, title, workspace: workspaceId }, { withCredentials: true });
+      const newBoard = res.data.payload;
+      set((state) => ({ boards: [...state.boards, newBoard], loading: false }));
+      return newBoard;
+    } catch (err) {
+      set({ error: err.response?.data?.message || "Failed to create from template", loading: false });
+      throw err;
+    }
+  },
+
+  getTemplates: async (workspaceId) => {
+    try {
+      const res = await axios.get(`/board/templates?workspace=${workspaceId}`, { withCredentials: true });
+      return res.data.payload || [];
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  // ── Card Complete / Incomplete ─────────────────────────
+
+  completeCard: async (cardId) => {
+    try {
+      const res = await axios.put(`/card/${cardId}/complete`, {}, { withCredentials: true });
+      return res.data.payload;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  incompleteCard: async (cardId) => {
+    try {
+      const res = await axios.put(`/card/${cardId}/incomplete`, {}, { withCredentials: true });
+      return res.data.payload;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  // ── Card Archive / Unarchive ───────────────────────────
+
+  archiveCard: async (cardId) => {
+    try {
+      const res = await axios.put(`/card/${cardId}/archive`, {}, { withCredentials: true });
+      // Remove from current board view
+      const boardId = get().currentBoard?._id;
+      if (boardId) await get().getBoardById(boardId);
+      return res.data.payload;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  unarchiveCard: async (cardId) => {
+    try {
+      const res = await axios.put(`/card/${cardId}/unarchive`, {}, { withCredentials: true });
+      return res.data.payload;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  // ── Card Members ───────────────────────────────────────
+
+  assignCardMember: async (cardId, userId) => {
+    try {
+      const res = await axios.post(`/card/${cardId}/members`, { userId }, { withCredentials: true });
+      return res.data.payload;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  removeCardMember: async (cardId, userId) => {
+    try {
+      const res = await axios.delete(`/card/${cardId}/members/${userId}`, { withCredentials: true });
+      return res.data.payload;
     } catch (err) {
       throw err;
     }
