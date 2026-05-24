@@ -19,6 +19,7 @@ import Notification from "./components/Notification";
 import Logout from "./components/Logout";
 import InviteHandler from "./components/InviteHandler";
 import { ProtectedRoute, PublicRoute } from "./components/AuthGuards";
+import Superadmin from "./components/Superadmin";
 
 const router = createBrowserRouter([
   {
@@ -69,6 +70,14 @@ const router = createBrowserRouter([
   {
     path: "logout",
     element: <Logout />,
+  },
+  {
+    path: "superadmin",
+    element: (
+      <ProtectedRoute>
+        <Superadmin />
+      </ProtectedRoute>
+    ),
   },
 ]);
 

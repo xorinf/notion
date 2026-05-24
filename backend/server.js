@@ -17,6 +17,7 @@ import { searchAPP } from './API/searchAPI.js';
 import { userAPP } from './API/userAPI.js';
 import { attachmentAPP } from './API/attachmentAPI.js';
 import { inviteAPP } from './API/inviteAPI.js';
+import { superadminAPP } from './API/superadminAPI.js';
 
 config({ path: "../.env", encoding: "UTF-8", quiet: true });
 
@@ -122,6 +123,7 @@ app.use("/search", searchAPP);
 app.use("/user", userAPP);
 app.use("/attachment", attachmentAPP);
 app.use("/invite", inviteAPP);
+app.use("/superadmin", superadminAPP);
 
 // health check
 app.get('/', (req, res) => {
