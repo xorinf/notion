@@ -8,7 +8,6 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import axios from 'axios'
 import { useWorkspace } from '../../store/workspaceStore'
-import { useAuth } from '../../store/authStore'
 import { Loader2, Users, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
 import { primaryBtn, secondaryBtn } from '../styles/common'
 
@@ -22,7 +21,6 @@ const api = axios.create({
 function InviteHandler() {
   const { token } = useParams()
   const navigate = useNavigate()
-  const checkAuth = useAuth(state => state.checkAuth)
   const acceptInviteStore = useWorkspace(state => state.acceptInvite)
   const declineInviteStore = useWorkspace(state => state.declineInvite)
 
@@ -43,8 +41,6 @@ function InviteHandler() {
     async function getInviteDetails() {
       try {
         setLoading(true)
-        // Authenticate user first
-        await checkAuth()
         const res = await api.get(`/invite/details/${token}`)
         setInvite(res.data.payload)
       } catch (err) {
@@ -57,7 +53,7 @@ function InviteHandler() {
     if (token) {
       getInviteDetails()
     }
-  }, [token, checkAuth])
+  }, [token])
 
   const handleAccept = async () => {
     try {
