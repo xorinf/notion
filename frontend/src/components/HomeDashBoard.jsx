@@ -28,7 +28,7 @@ function HomeDashBoard() {
 
   useEffect(() => {
     fetchWorkspaces()
-  }, [fetchWorkspaces])
+  }, [])
 
   useEffect(() => {
     if (workspaces.length === 0) return

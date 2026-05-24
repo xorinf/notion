@@ -34,7 +34,7 @@ function Page() {
 
   useEffect(() => {
     fetchWorkspaces()
-  }, [fetchWorkspaces])
+  }, [])
 
   useEffect(() => {
     const loadAllPages = async () => {
