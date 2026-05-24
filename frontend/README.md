@@ -1,16 +1,49 @@
-# React + Vite
+# Taskify Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The frontend of Taskify is a highly interactive Single Page Application (SPA) built with **React** and **Vite**. 
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Framework**: React 18+ via Vite
+- **Styling**: Tailwind CSS
+- **State Management**: Zustand
+- **Routing**: React Router DOM (v6+)
+- **Network**: Axios
+- **Real-Time**: Socket.io-client
+- **Rich Text**: React-Quill
+- **Icons**: Lucide React
 
-## React Compiler
+## Architecture
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The application is structured to decouple UI from business logic and data fetching:
 
-## Expanding the ESLint configuration
+- **`/src/components`**: Contains all React components. We utilize `React.lazy()` for route-level code splitting in `App.jsx` to maintain a small initial bundle size.
+- **`/store`**: Contains Zustand stores (e.g., `workspaceStore.js`, `boardStore.js`). Stores handle all Axios API calls, optimistic UI updates, and hold the global application state. Components are purely reactive to store changes.
+- **`/src/styles`**: Shared CSS utilities and Tailwind class templates (`common.js`) to enforce a uniform design system.
+- **`/src/assets`**: Static branding and UI graphics.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Core Concepts
+
+1. **State Management Flow**:
+   - A user interacts with the UI (e.g., clicks "Create List").
+   - The component calls an action in `boardStore.js`.
+   - The store makes an asynchronous Axios request to the backend.
+   - Upon success, the store updates its internal state.
+   - The component automatically re-renders with the new data.
+
+2. **Real-Time Synchronization**:
+   - `socketStore.js` maintains a persistent WebSocket connection to the backend.
+   - When a real-time event is received (e.g., `boardUpdated`), the socket listener updates the specific Zustand store silently, keeping the UI in sync without requiring manual page refreshes.
+
+3. **Performance Optimizations**:
+   - The app uses `fetchpriority="high"` and `<link rel="preload">` in `index.html` to optimize the Largest Contentful Paint (LCP).
+   - Images and off-screen assets utilize `loading="lazy"`.
+
+## Running Locally
+
+1. Create a `.env` file in the `frontend/` directory (if not using the default proxy):
+   ```env
+   VITE_BACKEND_URL=http://localhost:6767
+   ```
+2. Install dependencies: `npm install`
+3. Start the dev server: `npm run dev`
