@@ -56,7 +56,7 @@ function Sidebar() {
     getUnreadCount()
     fetchWorkspaces()
     fetchStarred()
-  }, [getUnreadCount, fetchWorkspaces, fetchStarred])
+  }, [])
 
   const handleLogout = async () => {
     await logout()

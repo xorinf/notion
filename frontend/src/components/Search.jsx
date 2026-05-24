@@ -35,7 +35,7 @@ function Search() {
 
   useEffect(() => {
     fetchWorkspaces()
-  }, [fetchWorkspaces])
+  }, [])
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {

@@ -92,17 +92,17 @@ function Workspace() {
       fetchBoards(id)
       fetchPages(id)
     }
-  }, [id, getWorkspaceById, fetchBoards])
+  }, [id])
 
   useEffect(() => {
     if (activeTab === 'activity' && id) {
       fetchWorkspaceActivity(id).then(data => setActivity(data || []))
     }
-  }, [activeTab, id, fetchWorkspaceActivity])
+  }, [activeTab, id])
 
   useEffect(() => {
     fetchPending()
-  }, [id, activeTab, fetchPendingInvites])
+  }, [id, activeTab])
 
   // Sync pageId query param with selectedPageId
   useEffect(() => {
@@ -123,7 +123,7 @@ function Workspace() {
       setTemplates([])
       setSelectedTemplateId('')
     }
-  }, [showCreateBoard, id, getTemplates])
+  }, [showCreateBoard, id])
 
   if (loading && !currentWorkspace) {
     return (
