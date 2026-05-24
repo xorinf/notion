@@ -112,6 +112,9 @@ inviteAPP.post("/:id/resend", verifyToken(), async(req,res,next)=>{
         const invite = await inviteModel.findById(inviteId)
         
         if(!invite) return res.status(404).json({message:"Invite not found"})
+        if(invite.status === "ACCEPTED" || invite.status === "DECLINED") {
+            return res.status(400).json({message:"Cannot resend an accepted or declined invite."})
+        }
         
         invite.inviteToken = crypto.randomBytes(32).toString("hex")
         invite.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
