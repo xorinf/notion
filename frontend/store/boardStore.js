@@ -1,11 +1,16 @@
 import { create } from "zustand";
 import axios from "axios";
 
-export const useBoard = create((set, get) => ({
+const initialState = {
   boards: [],
   currentBoard: null,
   loading: false,
   error: null,
+};
+
+export const useBoard = create((set, get) => ({
+  ...initialState,
+  reset: () => set(initialState),
 
   // ── Boards ──────────────────────────────────────────────
 

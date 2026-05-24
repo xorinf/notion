@@ -5,7 +5,7 @@ import { verifyToken } from '../middleware/verifyToken.js'
 export const cardAPP = express.Router()
 
 import { upload } from '../config/multer.js'
-import { uploadToCloudinary } from '../config/cloudinaryUpload.js'
+import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinaryUpload.js'
 
 // log activity for card
 const logActivity = async (action, entityId, details, userId, workspace) => {
@@ -454,6 +454,11 @@ cardAPP.post("/:id/attachments", verifyToken(), upload.single("file"), async (re
 // Delete attachment from card
 cardAPP.delete("/:id/attachments/:attachmentId", verifyToken(), async (request, response, next) => {
     try {
+        const attachment = await attachmentModel.findById(request.params.attachmentId)
+        if (attachment?.url) {
+            await deleteFromCloudinary(attachment.url)
+        }
+
         const card = await cardModel.findByIdAndUpdate(
             request.params.id,
             { $pull: { attachments: request.params.attachmentId } },
@@ -461,7 +466,6 @@ cardAPP.delete("/:id/attachments/:attachmentId", verifyToken(), async (request, 
         )
         if (!card) return response.status(404).json({ message: "Card Not Found" })
 
-        // Optional: Also delete from Cloudinary here if needed, but we'll just delete the document for now.
         await attachmentModel.findByIdAndDelete(request.params.attachmentId)
 
         response.status(200).json({ message: "Attachment deleted" })
@@ -495,6 +499,11 @@ cardAPP.post("/:id/cover", verifyToken(), upload.single("file"), async (request,
 // Remove cover image from card
 cardAPP.delete("/:id/cover", verifyToken(), async (request, response, next) => {
     try {
+        const existingCard = await cardModel.findById(request.params.id)
+        if (existingCard?.coverImage) {
+            await deleteFromCloudinary(existingCard.coverImage)
+        }
+
         const card = await cardModel.findByIdAndUpdate(
             request.params.id,
             { coverImage: "" },

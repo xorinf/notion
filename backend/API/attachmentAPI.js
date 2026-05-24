@@ -45,6 +45,12 @@ attachmentAPP.delete("/:id", verifyToken(), async(req,res,next)=>{
         const attachment = await attachmentModel.findById(id)
         if(!attachment) return res.status(404).json({message:"Attachment not found"})
         
+        // Delete from Cloudinary to prevent asset leakage
+        if (attachment.url) {
+            const { deleteFromCloudinary } = await import('../config/cloudinaryUpload.js');
+            await deleteFromCloudinary(attachment.url);
+        }
+
         // Remove reference from the card
         await cardModel.findByIdAndUpdate(attachment.card, { $pull: { attachments: id } })
         

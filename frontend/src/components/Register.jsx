@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, NavLink } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { Eye, EyeOff, Feather, Loader2  } from 'lucide-react'
@@ -23,6 +23,13 @@ function Register() {
   const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
 
   const {
     handleSubmit,
@@ -45,7 +52,7 @@ function Register() {
         password: data.password,
       })
       setSuccessMsg('Account created! Redirecting to login…')
-      setTimeout(() => navigate('/login'), 1800)
+      timerRef.current = setTimeout(() => navigate('/login'), 1800)
     } catch (err) {
       setServerError(err?.response?.data?.message || 'Registration failed. Please try again.')
     } finally {

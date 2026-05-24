@@ -1,11 +1,16 @@
 import { create } from "zustand";
 import axios from "axios";
 
-export const useNotification = create((set) => ({
+const initialState = {
   notifications: [],
   unreadCount: 0,
   loading: false,
   error: null,
+};
+
+export const useNotification = create((set) => ({
+  ...initialState,
+  reset: () => set(initialState),
 
   fetchNotifications: async () => {
     set({ loading: true, error: null });

@@ -1,10 +1,15 @@
 import { create } from "zustand";
 import axios from "axios";
 
-export const useSearch = create((set, get) => ({
+const initialState = {
   searchResults: [],
   loading: false,
   error: null,
+};
+
+export const useSearch = create((set, get) => ({
+  ...initialState,
+  reset: () => set(initialState),
 
   globalSearch: async (query, workspaceId, type = null) => {
     if (!query) {

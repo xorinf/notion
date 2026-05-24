@@ -1,11 +1,16 @@
 import { create } from "zustand";
 import axios from "axios";
 
-export const usePage = create((set, get) => ({
+const initialState = {
   pages: [],
   currentPage: null,
   loading: false,
   error: null,
+};
+
+export const usePage = create((set, get) => ({
+  ...initialState,
+  reset: () => set(initialState),
 
   fetchPages: async (workspaceId) => {
     set({ loading: true, error: null });

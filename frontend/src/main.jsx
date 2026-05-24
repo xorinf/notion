@@ -9,8 +9,8 @@ axios.defaults.baseURL = '/api'
 axios.defaults.withCredentials = true
 
 // Initialize socket connection lazily (will connect when user logs in)
-import { useSocket } from '../store/socketStore.js'
-useSocket.getState().connect()
+// import { useSocket } from '../store/socketStore.js'
+// Connection is now handled in authStore.js upon successful login/auth
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

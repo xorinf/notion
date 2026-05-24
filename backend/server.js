@@ -131,11 +131,17 @@ app.get('/', (req, res) => {
 });
 
 // db connect + start
+import mongoose from 'mongoose';
 const db_address = process.env.DB_URL;
 const port = process.env.PORT;
+
+// Subscribe to connection logs
+mongoose.connection.on('connected', () => console.log('Mongoose connected to DB'));
+mongoose.connection.on('error', (err) => console.error('Mongoose connection error:', err));
+mongoose.connection.on('disconnected', () => console.warn('Mongoose disconnected from DB'));
+
 try {
-  await connect(db_address);
-  console.log(`The DataBase is connected!`);
+  await mongoose.connect(db_address);
   httpServer.listen(port || 6767, () =>
     console.log(`Server + Socket.io listening at port: ${port || 6767}`)
   );

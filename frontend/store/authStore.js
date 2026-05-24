@@ -24,6 +24,9 @@ export const useAuth = create((set) => ({
         currentUser: res.data.payload,
         error: null,
       });
+      // Lazily connect socket upon successful login
+      const { useSocket } = await import("./socketStore.js");
+      useSocket.getState().connect();
       return res.data;
     } catch (err) {
       console.log("err is ", err);
@@ -51,6 +54,31 @@ export const useAuth = create((set) => ({
   logout: async () => {
     set({ loading: true, error: null });
     try {
+      // Disconnect socket connection on logout to prevent socket leak
+      const { useSocket } = await import("./socketStore.js");
+      useSocket.getState().disconnect();
+
+      // Clear all Zustand states
+      try {
+        const { useBoard } = await import("./boardStore.js");
+        const { useWorkspace } = await import("./workspaceStore.js");
+        const { usePage } = await import("./pageStore.js");
+        const { useActivity } = await import("./activityStore.js");
+        const { useNotification } = await import("./notificationStore.js");
+        const { useSearch } = await import("./searchStore.js");
+        const { useSuperadmin } = await import("./superadminStore.js");
+        
+        if (useBoard.getState().reset) useBoard.getState().reset();
+        if (useWorkspace.getState().reset) useWorkspace.getState().reset();
+        if (usePage.getState().reset) usePage.getState().reset();
+        if (useActivity.getState().reset) useActivity.getState().reset();
+        if (useNotification.getState().reset) useNotification.getState().reset();
+        if (useSearch.getState().reset) useSearch.getState().reset();
+        if (useSuperadmin.getState().reset) useSuperadmin.getState().reset();
+      } catch (e) {
+        console.error("Store reset failed:", e);
+      }
+
       await axios.get("/auth/logout", { withCredentials: true });
       // Clear token from localStorage
       localStorage.removeItem("token");
@@ -84,6 +112,9 @@ export const useAuth = create((set) => ({
         isAuthenticated: true,
         isCheckingAuth: false,
       });
+      // Lazily connect socket on successful session restoration
+      const { useSocket } = await import("./socketStore.js");
+      useSocket.getState().connect();
     } catch (err) {
       // If user is not logged in -> silently clear state and token
       if (err.response?.status === 401) {
@@ -123,6 +154,31 @@ export const useAuth = create((set) => ({
   deleteAccount: async () => {
     set({ loading: true, error: null });
     try {
+      // Disconnect socket connection
+      const { useSocket } = await import("./socketStore.js");
+      useSocket.getState().disconnect();
+
+      // Clear all Zustand states
+      try {
+        const { useBoard } = await import("./boardStore.js");
+        const { useWorkspace } = await import("./workspaceStore.js");
+        const { usePage } = await import("./pageStore.js");
+        const { useActivity } = await import("./activityStore.js");
+        const { useNotification } = await import("./notificationStore.js");
+        const { useSearch } = await import("./searchStore.js");
+        const { useSuperadmin } = await import("./superadminStore.js");
+        
+        if (useBoard.getState().reset) useBoard.getState().reset();
+        if (useWorkspace.getState().reset) useWorkspace.getState().reset();
+        if (usePage.getState().reset) usePage.getState().reset();
+        if (useActivity.getState().reset) useActivity.getState().reset();
+        if (useNotification.getState().reset) useNotification.getState().reset();
+        if (useSearch.getState().reset) useSearch.getState().reset();
+        if (useSuperadmin.getState().reset) useSuperadmin.getState().reset();
+      } catch (e) {
+        console.error("Store reset failed:", e);
+      }
+
       await axios.delete("/user/me", { withCredentials: true });
       localStorage.removeItem("token");
       set({

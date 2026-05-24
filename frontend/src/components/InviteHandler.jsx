@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import axios from 'axios'
 import { useWorkspace } from '../../store/workspaceStore'
@@ -25,6 +25,13 @@ function InviteHandler() {
   const [invite, setInvite] = useState(null)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     async function getInviteDetails() {
@@ -51,7 +58,7 @@ function InviteHandler() {
       setActionLoading(true)
       await acceptInviteStore(token)
       setSuccessMessage(`Successfully joined ${invite.workspace.name}!`)
-      setTimeout(() => {
+      timerRef.current = setTimeout(() => {
         navigate(`/dashboard/workspace/${invite.workspace._id}`)
       }, 2000)
     } catch (err) {
@@ -66,7 +73,7 @@ function InviteHandler() {
       setActionLoading(true)
       await declineInviteStore(token)
       setSuccessMessage('Invitation declined.')
-      setTimeout(() => {
+      timerRef.current = setTimeout(() => {
         navigate('/dashboard')
       }, 2000)
     } catch (err) {

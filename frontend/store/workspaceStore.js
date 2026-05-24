@@ -1,11 +1,16 @@
 import { create } from "zustand";
 import axios from "axios";
 
-export const useWorkspace = create((set, get) => ({
+const initialState = {
   workspaces: [],
   currentWorkspace: null,
   loading: false,
   error: null,
+};
+
+export const useWorkspace = create((set, get) => ({
+  ...initialState,
+  reset: () => set(initialState),
 
   fetchWorkspaces: async () => {
     set({ loading: true, error: null });

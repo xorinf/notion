@@ -1,11 +1,16 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-export const useSuperadmin = create((set) => ({
+const initialState = {
   stats: null,
   users: [],
   loading: false,
   error: null,
+};
+
+export const useSuperadmin = create((set) => ({
+  ...initialState,
+  reset: () => set(initialState),
 
   getStats: async () => {
     set({ loading: true, error: null });
