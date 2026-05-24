@@ -1,5 +1,5 @@
 import express from 'express'
-import { listModel, boardModel } from '../models/mainModels.js'
+import { listModel, boardModel, cardModel } from '../models/mainModels.js'
 import { verifyToken } from '../middleware/verifyToken.js'
 
 export const listAPP = express.Router()
@@ -84,8 +84,18 @@ listAPP.put("/:id/unarchive", verifyToken(), async (req, res, next) => {
 listAPP.delete("/:id", verifyToken(), async (req, res, next) => {
     try {
         const { id } = req.params
-        const deleteList = await listModel.findByIdAndDelete(id)
+        const deleteList = await listModel.findById(id)
         if (!deleteList) return res.status(404).json({ message: "List not found" })
+        
+        // Remove reference from board
+        await boardModel.findByIdAndUpdate(deleteList.board, { $pull: { lists: id } })
+        
+        // Delete all card documents in this list
+        await cardModel.deleteMany({ list: id })
+        
+        // Delete the list document
+        await listModel.findByIdAndDelete(id)
+        
         res.status(200).json({message: "List deleted successfully"})
     } catch(err) { next(err) }
 })

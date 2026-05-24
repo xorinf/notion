@@ -1,5 +1,5 @@
 import express from 'express'
-import { cardModel, listModel, activityModel, attachmentModel } from '../models/mainModels.js'
+import { cardModel, listModel, activityModel, attachmentModel, userModel, notificationModel } from '../models/mainModels.js'
 import { verifyToken } from '../middleware/verifyToken.js'
 
 export const cardAPP = express.Router()
@@ -217,12 +217,34 @@ cardAPP.delete("/:id", verifyToken(), async (request, response, next) => {
 cardAPP.post("/:id/members", verifyToken(), async (request, response, next) => {
     try {
         const { userId } = request.body
+        const cardBefore = await cardModel.findById(request.params.id)
+        if (!cardBefore) return response.status(404).json({ message: "Card Not Found" })
+
+        const alreadyMember = cardBefore.members.some(m => m.toString() === userId)
+
         const card = await cardModel.findByIdAndUpdate(
             request.params.id,
             { $addToSet: { members: userId } },
             { returnDocument: 'after' }
         )
-        if (!card) return response.status(404).json({ message: "Card Not Found" })
+
+        if (!alreadyMember && userId !== request.user.id) {
+            const assigner = await userModel.findById(request.user.id)
+            const assignerName = assigner ? `${assigner.firstName} ${assigner.lastName}` : "Someone"
+            
+            await notificationModel.create({
+                recipient: userId,
+                type: "ASSIGNED",
+                title: `Assigned to card: "${card.title}"`,
+                message: `${assignerName} assigned you to the card "${card.title}"`,
+                link: `/dashboard/board/${card.board}`,
+                relatedEntity: {
+                    entityType: "Card",
+                    entityId: card._id
+                }
+            })
+        }
+
         response.status(200).json({ message: "Member assigned", payload: card })
     } catch (error) {
         next(error)
@@ -331,7 +353,28 @@ cardAPP.post("/:id/comments", verifyToken(), async (request, response, next) => 
             { $push: { comments: { text, author: request.user.id } } },
             { returnDocument: 'after' }
         ).populate("comments.author", "firstName lastName avatarUrl")
+        
         if (!card) return response.status(404).json({ message: "Card Not Found" })
+
+        // Notify other card members
+        const commenter = await userModel.findById(request.user.id)
+        const commenterName = commenter ? `${commenter.firstName} ${commenter.lastName}` : "Someone"
+        const otherMembers = card.members.filter(m => m.toString() !== request.user.id)
+        
+        for (const memberId of otherMembers) {
+            await notificationModel.create({
+                recipient: memberId,
+                type: "COMMENT",
+                title: `New comment on: "${card.title}"`,
+                message: `${commenterName} commented: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+                link: `/dashboard/board/${card.board}`,
+                relatedEntity: {
+                    entityType: "Card",
+                    entityId: card._id
+                }
+            })
+        }
+
         response.status(201).json({ message: "Comment added", payload: card })
     } catch (error) {
         next(error)
