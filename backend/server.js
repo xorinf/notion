@@ -52,9 +52,7 @@ const port = process.env.PORT;
 try {
   await connect(db_address);
   console.log(`The DataBase is connected!`);
-  if (process.env.NODE_ENV !== "production") {
-    app.listen(port, () => console.log(`server listening at port : ${port} ...`));
-  }
+  app.listen(port || 6767, () => console.log(`server listening at port : ${port || 6767} ...`));
 } catch (err) {
   console.log("con refused :", err);
 }
