@@ -72,15 +72,17 @@ export const useAuth = create((set) => ({
     }
   },
 
+  isCheckingAuth: true,
+
   // Restore login session on page refresh by verifying the httpOnly cookie
   checkAuth: async () => {
     try {
-      set({ loading: true });
+      set({ isCheckingAuth: true });
       const res = await axios.get("/auth/check-auth", { withCredentials: true });
       set({
         currentUser: res.data.payload,
         isAuthenticated: true,
-        loading: false,
+        isCheckingAuth: false,
       });
     } catch (err) {
       // If user is not logged in -> silently clear state and token
@@ -89,13 +91,13 @@ export const useAuth = create((set) => ({
         set({
           currentUser: null,
           isAuthenticated: false,
-          loading: false,
+          isCheckingAuth: false,
         });
         return;
       }
       // other errors
       console.error("Auth check failed:", err);
-      set({ loading: false });
+      set({ isCheckingAuth: false });
     }
   },
 

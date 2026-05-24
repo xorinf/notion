@@ -8,9 +8,9 @@ import { Loader2 } from 'lucide-react'
  */
 export function ProtectedRoute({ children }) {
   const currentUser = useAuth(state => state.currentUser)
-  const loading = useAuth(state => state.loading)
+  const isCheckingAuth = useAuth(state => state.isCheckingAuth)
 
-  if (loading) {
+  if (isCheckingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-3">
@@ -34,9 +34,9 @@ export function ProtectedRoute({ children }) {
  */
 export function PublicRoute({ children }) {
   const currentUser = useAuth(state => state.currentUser)
-  const loading = useAuth(state => state.loading)
+  const isCheckingAuth = useAuth(state => state.isCheckingAuth)
 
-  if (loading) {
+  if (isCheckingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <Loader2 className="w-8 h-8 text-[#1a73e8] animate-spin" />
