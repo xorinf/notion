@@ -1,5 +1,5 @@
 import express from "express"
-import { inviteModel } from "../models/mainModels.js"
+import { inviteModel, workspaceModel, userModel, notificationModel } from "../models/mainModels.js"
 import { verifyToken } from '../middleware/verifyToken.js'
 import crypto from "crypto"
 
@@ -23,6 +23,28 @@ inviteAPP.post("/", verifyToken(), async(req,res,next)=>{
             inviteToken,
             expiresAt
         })
+
+        // Try to find the user with the invited email in our system
+        const recipientUser = await userModel.findOne({ email: email.toLowerCase() })
+        if (recipientUser) {
+            const inviter = await userModel.findById(userId)
+            const workspaceObj = await workspaceModel.findById(workspace)
+            const inviterName = inviter ? `${inviter.firstName} ${inviter.lastName}` : "Someone"
+            const workspaceName = workspaceObj ? workspaceObj.name : "a workspace"
+
+            await notificationModel.create({
+                recipient: recipientUser._id,
+                type: "INVITE",
+                title: `${inviterName} invited you to join the workspace "${workspaceName}"`,
+                message: `Click to accept or decline this invite.`,
+                link: `/dashboard/workspace/invite/${inviteToken}`,
+                relatedEntity: {
+                    entityType: "Workspace",
+                    entityId: workspace
+                }
+            })
+        }
+
         res.status(201).json({message:"Invite sent successfully",payload:invite})
     } catch(err) { next(err) }
 })
@@ -50,6 +72,17 @@ inviteAPP.post("/accept/:inviteToken", verifyToken(), async(req,res,next)=>{
         
         invite.status = "ACCEPTED"
         await invite.save()
+
+        // Link the user to the workspace
+        const workspaceId = invite.workspace
+        const userId = req.user.id
+
+        await workspaceModel.findByIdAndUpdate(workspaceId, {
+            $addToSet: { members: { user: userId, role: invite.role || "MEMBER" } }
+        })
+        await userModel.findByIdAndUpdate(userId, {
+            $addToSet: { workspaces: workspaceId }
+        })
         
         res.status(200).json({message:"Invite accepted successfully",payload:invite})
     } catch(err) { next(err) }
@@ -97,5 +130,17 @@ inviteAPP.delete("/:id", verifyToken(), async(req,res,next)=>{
         if(!invite) return res.status(404).json({message:"Invite not found"})
         
         res.status(200).json({message:"Invite deleted successfully"})
+    } catch(err) { next(err) }
+})
+
+//get invite details by token
+inviteAPP.get("/details/:inviteToken", verifyToken(), async(req,res,next)=>{
+    try {
+        const inviteToken = req.params.inviteToken
+        const invite = await inviteModel.findOne({inviteToken})
+            .populate("workspace", "name description icon")
+            .populate("invitedBy", "firstName lastName email avatarUrl")
+        if(!invite) return res.status(404).json({message:"Invite not found"})
+        res.status(200).json({message:"Invite details fetched",payload:invite})
     } catch(err) { next(err) }
 })

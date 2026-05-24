@@ -17,6 +17,7 @@ import ChangePassword from "./components/ChangePassword";
 import BoardView from "./components/BoardView";
 import Notification from "./components/Notification";
 import Logout from "./components/Logout";
+import InviteHandler from "./components/InviteHandler";
 import { ProtectedRoute, PublicRoute } from "./components/AuthGuards";
 
 const router = createBrowserRouter([
@@ -54,6 +55,7 @@ const router = createBrowserRouter([
       { index: true, element: <HomeDashBoard /> },
       { path: "profile", element: <Profile /> },
       { path: "workspace/:id", element: <Workspace /> },
+      { path: "workspace/invite/:token", element: <InviteHandler /> },
       { path: "task", element: <Task /> },
       { path: "journal", element: <Journal /> },
       { path: "page", element: <Page /> },

@@ -28,12 +28,16 @@ function Workspace() {
   const removeMember = useWorkspace(state => state.removeMember)
   const fetchWorkspaceActivity = useWorkspace(state => state.fetchWorkspaceActivity)
   const sendInvite = useWorkspace(state => state.sendInvite)
+  const fetchPendingInvites = useWorkspace(state => state.fetchPendingInvites)
+  const cancelInviteAction = useWorkspace(state => state.cancelInvite)
+  const resendInviteAction = useWorkspace(state => state.resendInvite)
   
   const currentUser = useAuth(state => state.currentUser)
   const searchUsers = useAuth(state => state.searchUsers)
 
   const [activeTab, setActiveTab] = useState('boards')
   const [activity, setActivity] = useState([])
+  const [pendingInvites, setPendingInvites] = useState([])
 
   // Board state
   const boards = useBoard(state => state.boards)
@@ -62,7 +66,17 @@ function Workspace() {
   const [isSearching, setIsSearching] = useState(false)
   const [memberToRemove, setMemberToRemove] = useState(null)
   const [inviteRole, setInviteRole] = useState('MEMBER')
-  
+  const fetchPending = async () => {
+    if (id && activeTab === 'members') {
+      try {
+        const data = await fetchPendingInvites(id)
+        setPendingInvites(data || [])
+      } catch (err) {
+        console.error(err)
+      }
+    }
+  }
+
   useEffect(() => {
     if (id) {
       getWorkspaceById(id)
@@ -76,6 +90,10 @@ function Workspace() {
       fetchWorkspaceActivity(id).then(data => setActivity(data || []))
     }
   }, [activeTab, id, fetchWorkspaceActivity])
+
+  useEffect(() => {
+    fetchPending()
+  }, [id, activeTab, fetchPendingInvites])
 
   if (loading && !currentWorkspace) {
     return (
@@ -347,6 +365,67 @@ function Workspace() {
               </div>
             ))}
           </div>
+
+          {/* Pending Invites Section */}
+          {isAdmin && pendingInvites.length > 0 && (
+            <div className="mt-10">
+              <h3 className="text-lg font-semibold text-[#1d1d1f] mb-4 flex items-center gap-2">
+                <Mail className="w-5 h-5 text-[#80868b]" /> Pending Invitations
+              </h3>
+              <div className="bg-white border border-[#dadce0] rounded-[16px] overflow-hidden">
+                <div className="grid grid-cols-12 gap-4 p-4 border-b border-[#dadce0] bg-[#f7f7f5] text-xs font-semibold tracking-wider text-[#5f6368] uppercase">
+                  <div className="col-span-6">Invitee Email</div>
+                  <div className="col-span-3">Role</div>
+                  <div className="col-span-3 text-right">Actions</div>
+                </div>
+                {pendingInvites.map((inv) => (
+                  <div key={inv._id} className="grid grid-cols-12 gap-4 p-4 border-b border-[#dadce0] last:border-0 items-center">
+                    <div className="col-span-6 text-sm text-[#1d1d1f] truncate font-medium">
+                      {inv.email}
+                    </div>
+                    <div className="col-span-3">
+                      <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 bg-[#efefed] text-[#1d1d1f] rounded-md uppercase">
+                        {inv.role}
+                      </span>
+                    </div>
+                    <div className="col-span-3 flex justify-end gap-2">
+                      <button
+                        onClick={async () => {
+                          try {
+                            await resendInviteAction(inv._id)
+                            alert('Invite token reset and resent!')
+                            fetchPending()
+                          } catch (err) {
+                            alert('Failed to resend invite')
+                          }
+                        }}
+                        className="text-xs text-[#1a73e8] hover:bg-[#1a73e8]/10 px-3 py-1.5 rounded-lg transition-colors font-medium cursor-pointer"
+                        title="Resend Invitation"
+                      >
+                        Resend
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (confirm('Cancel this invitation?')) {
+                            try {
+                              await cancelInviteAction(inv._id)
+                              fetchPending()
+                            } catch (err) {
+                              alert('Failed to cancel invite')
+                            }
+                          }
+                        }}
+                        className="text-xs text-[#ff3b30] hover:bg-[#ff3b30]/10 px-3 py-1.5 rounded-lg transition-colors font-medium cursor-pointer"
+                        title="Cancel Invitation"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -425,6 +504,7 @@ function Workspace() {
                 alert(`Invite sent to ${searchEmail}`)
                 setSearchEmail('')
                 setIsAddingMember(false)
+                fetchPending()
               } catch (err) {
                 alert('Failed to send invite')
               }

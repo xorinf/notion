@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router'
 import { useNotification } from '../../store/notificationStore'
 import {
   Bell, CheckCheck, Trash2, Loader2, Mail, Users, Calendar, MessageSquare, LayoutGrid, X
@@ -15,6 +16,7 @@ const TYPE_CONFIG = {
 }
 
 function Notification() {
+  const navigate = useNavigate()
   const notifications = useNotification(state => state.notifications)
   const loading = useNotification(state => state.loading)
   const fetchNotifications = useNotification(state => state.fetchNotifications)
@@ -75,7 +77,15 @@ function Notification() {
             return (
               <div
                 key={n._id}
+                onClick={() => {
+                  if (n.link) {
+                    markAsRead(n._id)
+                    navigate(n.link)
+                  }
+                }}
                 className={`flex items-start gap-4 p-4 rounded-2xl border transition-all group ${
+                  n.link ? 'cursor-pointer hover:border-[#1a73e8]/30 hover:shadow-sm' : ''
+                } ${
                   n.isRead
                     ? 'bg-white border-[#dadce0]'
                     : 'bg-[#1a73e8]/[0.03] border-[#1a73e8]/20'
@@ -101,7 +111,7 @@ function Notification() {
                 <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                   {!n.isRead && (
                     <button
-                      onClick={() => { markAsRead(n._id); getUnreadCount() }}
+                      onClick={(e) => { e.stopPropagation(); markAsRead(n._id); getUnreadCount() }}
                       className="p-1.5 hover:bg-[#1a73e8]/10 rounded-lg text-[#1a73e8] transition-colors"
                       title="Mark as read"
                     >
@@ -109,7 +119,7 @@ function Notification() {
                     </button>
                   )}
                   <button
-                    onClick={() => { deleteNotification(n._id); getUnreadCount() }}
+                    onClick={(e) => { e.stopPropagation(); deleteNotification(n._id); getUnreadCount() }}
                     className="p-1.5 hover:bg-[#ff3b30]/10 rounded-lg text-[#ff3b30] transition-colors"
                     title="Delete"
                   >
