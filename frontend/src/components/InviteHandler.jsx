@@ -160,20 +160,38 @@ function InviteHandler() {
 
             {/* Actions */}
             <div className="flex flex-col gap-2">
-              <button
-                disabled={actionLoading}
-                onClick={handleAccept}
-                className={`w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#1a73e8] hover:bg-[#1558b0] text-white font-medium rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50`}
-              >
-                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Accept & Join Workspace'}
-              </button>
-              <button
-                disabled={actionLoading}
-                onClick={handleDecline}
-                className="w-full text-center py-2.5 text-sm font-medium text-[#d93025] hover:bg-[#d93025]/5 rounded-xl transition-all active:scale-95 disabled:opacity-50"
-              >
-                Decline Invitation
-              </button>
+              {invite.status === 'PENDING' && new Date(invite.expiresAt) > new Date() ? (
+                <>
+                  <button
+                    disabled={actionLoading}
+                    onClick={handleAccept}
+                    className={`w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#1a73e8] hover:bg-[#1558b0] text-white font-medium rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50`}
+                  >
+                    {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Accept & Join Workspace'}
+                  </button>
+                  <button
+                    disabled={actionLoading}
+                    onClick={handleDecline}
+                    className="w-full text-center py-2.5 text-sm font-medium text-[#d93025] hover:bg-[#d93025]/5 rounded-xl transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    Decline Invitation
+                  </button>
+                </>
+              ) : (
+                <div className="text-center py-4 bg-[#f8f9fa] rounded-xl border border-[#dadce0]">
+                  <p className="text-[#5f6368] font-medium mb-4">
+                    {invite.status === 'ACCEPTED' && "This invitation has already been accepted."}
+                    {invite.status === 'DECLINED' && "This invitation was declined."}
+                    {(invite.status === 'EXPIRED' || new Date(invite.expiresAt) <= new Date()) && "This invitation has expired."}
+                  </p>
+                  <button
+                    onClick={() => navigate('/dashboard')}
+                    className={secondaryBtn}
+                  >
+                    Return to Dashboard
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
