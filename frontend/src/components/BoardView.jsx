@@ -236,7 +236,7 @@ function BoardView() {
                   <Draggable key={list._id} draggableId={list._id} index={index}>
                     {(provided, snapshot) => (
                       <div ref={provided.innerRef} {...provided.draggableProps}
-                        className={`w-72 shrink-0 bg-white rounded-2xl border ${snapshot.isDragging ? 'border-[#1a73e8] shadow-lg' : 'border-[#dadce0] shadow-sm'} flex flex-col max-h-full`}>
+                        className={`content-visibility-auto w-72 shrink-0 bg-white rounded-2xl border ${snapshot.isDragging ? 'border-[#1a73e8] shadow-lg' : 'border-[#dadce0] shadow-sm'} flex flex-col max-h-full`}>
                         {/* List Header */}
                         <div className="px-4 py-3 flex items-center justify-between border-b border-[#f1f3f4]" {...provided.dragHandleProps}>
                           {editingListId === list._id ? (
