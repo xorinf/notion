@@ -17,6 +17,7 @@ import ChangePassword from "./components/ChangePassword";
 import BoardView from "./components/BoardView";
 import Notification from "./components/Notification";
 import Logout from "./components/Logout";
+import { ProtectedRoute, PublicRoute } from "./components/AuthGuards";
 
 const router = createBrowserRouter([
   {
@@ -24,13 +25,31 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { index: true, element: <Home /> },
-      { path: "register", element: <Register /> },
-      { path: "login", element: <Login /> },
+      {
+        path: "register",
+        element: (
+          <PublicRoute>
+            <Register />
+          </PublicRoute>
+        ),
+      },
+      {
+        path: "login",
+        element: (
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        ),
+      },
     ],
   },
   {
     path: "dashboard",
-    element: <DashBoard />,
+    element: (
+      <ProtectedRoute>
+        <DashBoard />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <HomeDashBoard /> },
       { path: "profile", element: <Profile /> },
@@ -54,7 +73,6 @@ const router = createBrowserRouter([
 function App() {
   const checkAuth = useAuth((state) => state.checkAuth);
 
-  // Restore session on every full page load
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);

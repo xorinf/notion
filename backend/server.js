@@ -1,4 +1,6 @@
 import express from 'express';
+import { createServer } from 'http';
+import { Server as SocketIO } from 'socket.io';
 import { connect } from 'mongoose';
 import { config } from 'dotenv';
 import cookieParser from "cookie-parser";
@@ -17,10 +19,90 @@ import { attachmentAPP } from './API/attachmentAPI.js';
 import { inviteAPP } from './API/inviteAPI.js';
 
 config({ path: "../.env", encoding: "UTF-8", quiet: true });
+
 const app = express();
+const httpServer = createServer(app);
+
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+
+// Socket.io setup
+const io = new SocketIO(httpServer, {
+  cors: {
+    origin: FRONTEND_URL,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+
+// Socket.io event handlers
+io.on("connection", (socket) => {
+  console.log(`Socket connected: ${socket.id}`);
+
+  // Board room management
+  socket.on("join-board", (boardId) => {
+    socket.join(`board:${boardId}`);
+    console.log(`Socket ${socket.id} joined board:${boardId}`);
+  });
+
+  socket.on("leave-board", (boardId) => {
+    socket.leave(`board:${boardId}`);
+  });
+
+  // Page room management
+  socket.on("join-page", (pageId) => {
+    socket.join(`page:${pageId}`);
+  });
+
+  socket.on("leave-page", (pageId) => {
+    socket.leave(`page:${pageId}`);
+  });
+
+  // Real-time card events — broadcast to all in board room except sender
+  socket.on("card-moved", ({ boardId, cardId, sourceListId, destListId, sourceIndex, destIndex }) => {
+    socket.to(`board:${boardId}`).emit("card-moved", {
+      cardId, sourceListId, destListId, sourceIndex, destIndex
+    });
+  });
+
+  socket.on("card-updated", ({ boardId, cardId, updates }) => {
+    socket.to(`board:${boardId}`).emit("card-updated", { cardId, updates });
+  });
+
+  socket.on("card-created", ({ boardId, card }) => {
+    socket.to(`board:${boardId}`).emit("card-created", { card });
+  });
+
+  socket.on("card-deleted", ({ boardId, cardId, listId }) => {
+    socket.to(`board:${boardId}`).emit("card-deleted", { cardId, listId });
+  });
+
+  socket.on("list-created", ({ boardId, list }) => {
+    socket.to(`board:${boardId}`).emit("list-created", { list });
+  });
+
+  socket.on("list-updated", ({ boardId, listId, updates }) => {
+    socket.to(`board:${boardId}`).emit("list-updated", { listId, updates });
+  });
+
+  // Real-time page editing events
+  socket.on("page-updated", ({ pageId, userId, userName }) => {
+    socket.to(`page:${pageId}`).emit("page-updated", { userId, userName });
+  });
+
+  socket.on("page-editing", ({ pageId, userId, userName }) => {
+    socket.to(`page:${pageId}`).emit("page-editing", { userId, userName });
+  });
+
+  socket.on("disconnect", () => {
+    console.log(`Socket disconnected: ${socket.id}`);
+  });
+});
+
+// Make io available to routes if needed
+app.set("io", io);
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  origin: FRONTEND_URL,
   credentials: true
 }));
 
@@ -52,7 +134,9 @@ const port = process.env.PORT;
 try {
   await connect(db_address);
   console.log(`The DataBase is connected!`);
-  app.listen(port || 6767, () => console.log(`server listening at port : ${port || 6767} ...`));
+  httpServer.listen(port || 6767, () =>
+    console.log(`Server + Socket.io listening at port: ${port || 6767}`)
+  );
 } catch (err) {
   console.log("con refused :", err);
 }
@@ -66,22 +150,15 @@ app.use((request, response, next) => {
 // global error handler
 app.use((err, req, res, next) => {
   console.log("Error name:", err.name);
-  console.log("Error code:", err.code);
-  console.log("Error cause:", err.cause);
-  console.log("Full error:", JSON.stringify(err, null, 2));
-  //ValidationError
+  const errCode = err.code ?? err.cause?.code ?? err.errorResponse?.code;
+  const keyValue = err.keyValue ?? err.cause?.keyValue ?? err.errorResponse?.keyValue;
+
   if (err.name === "ValidationError") {
     return res.status(400).json({ message: "error occurred", error: err.message });
   }
-
-  //CastError
   if (err.name === "CastError") {
     return res.status(400).json({ message: "error occurred", error: err.message });
   }
-
-  const errCode = err.code ?? err.cause?.code ?? err.errorResponse?.code;
-  const keyValue = err.keyValue ?? err.cause?.keyValue ?? err.errorResponse?.keyValue;
-  // check mongoose error!
   if (errCode === 11000) {
     const field = Object.keys(keyValue)[0];
     const value = keyValue[field];
@@ -90,6 +167,7 @@ app.use((err, req, res, next) => {
       error: `${field} "${value}" already exists`,
     });
   }
-
   res.status(500).json({ message: "error occurred", error: "Server side error" });
 });
+
+export default app;

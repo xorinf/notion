@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: notion-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 6767
+      - key: FRONTEND_URL
+        value: https://notion-f-olive.vercel.app
+      - key: DB_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: SALT
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false

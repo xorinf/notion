@@ -7,19 +7,21 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      // Forward all /auth, /user, /workspace, etc. to the Express backend
-      '/auth':         'http://localhost:6767',
-      '/user':         'http://localhost:6767',
-      '/workspace':    'http://localhost:6767',
-      '/board':        'http://localhost:6767',
-      '/card':         'http://localhost:6767',
-      '/list':         'http://localhost:6767',
-      '/page':         'http://localhost:6767',
-      '/activity':     'http://localhost:6767',
-      '/notification': 'http://localhost:6767',
-      '/search':       'http://localhost:6767',
-      '/attachment':   'http://localhost:6767',
-      '/invite':       'http://localhost:6767',
+      '/api': {
+        target: 'http://localhost:6767',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+      '/socket.io': {
+        target: 'http://localhost:6767',
+        changeOrigin: true,
+        ws: true,
+      },
     },
+  },
+  define: {
+    'import.meta.env.VITE_BACKEND_URL': JSON.stringify(
+      process.env.VITE_BACKEND_URL || 'http://localhost:6767'
+    ),
   },
 })

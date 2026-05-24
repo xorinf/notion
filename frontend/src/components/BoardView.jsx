@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { useBoard } from '../../store/boardStore'
+import { useSocket } from '../../store/socketStore'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import {
   ArrowLeft, Plus, X, MoreHorizontal, Trash2, Edit2, Loader2, Archive,
@@ -39,6 +40,11 @@ function BoardView() {
   const saveAsTemplate = useBoard(s => s.saveAsTemplate)
   const updateBoard = useBoard(s => s.updateBoard)
 
+  const { 
+    joinBoard, leaveBoard, emitCardMoved, emitCardCreated, emitCardUpdated, 
+    emitListCreated, emitListUpdated, socket 
+  } = useSocket()
+
   const [showAddList, setShowAddList] = useState(false)
   const [newListTitle, setNewListTitle] = useState('')
   const [addingCardToList, setAddingCardToList] = useState(null)
@@ -50,22 +56,50 @@ function BoardView() {
   const [showBoardMenu, setShowBoardMenu] = useState(false)
   const [priorityFilter, setPriorityFilter] = useState('all')
   const [showFilters, setShowFilters] = useState(false)
+  const [confirmArchive, setConfirmArchive] = useState(false)
+  const [confirmTemplate, setConfirmTemplate] = useState(false)
 
+  // Join board room for real-time updates
   useEffect(() => {
-    if (boardId) getBoardById(boardId)
-  }, [boardId, getBoardById])
+    if (boardId) {
+      getBoardById(boardId)
+      joinBoard(boardId)
+    }
+    return () => {
+      if (boardId) leaveBoard(boardId)
+    }
+  }, [boardId, getBoardById, joinBoard, leaveBoard])
+
+  // Listen for ALL incoming real-time board updates from other users
+  useEffect(() => {
+    if (!socket || !boardId) return
+    
+    const handleRemoteUpdate = () => {
+      // Refresh board to get up-to-date state from server
+      getBoardById(boardId)
+    }
+    
+    const events = ['card-moved', 'card-updated', 'card-created', 'card-deleted', 'list-created', 'list-updated']
+    events.forEach(event => socket.on(event, handleRemoteUpdate))
+    
+    return () => {
+      events.forEach(event => socket.off(event, handleRemoteUpdate))
+    }
+  }, [socket, boardId, getBoardById])
 
   const handleCreateList = async (e) => {
     e.preventDefault()
     if (!newListTitle.trim()) return
     const lists = currentBoard?.lists || []
-    await createList({ title: newListTitle, board: boardId, position: lists.length })
+    const newList = await createList({ title: newListTitle, board: boardId, position: lists.length })
+    emitListCreated({ boardId, list: newList })
     setNewListTitle(''); setShowAddList(false)
   }
 
   const handleRenameList = async (id) => {
     if (!editListTitle.trim()) return
     await updateList(id, { title: editListTitle })
+    emitListUpdated({ boardId, listId: id, updates: { title: editListTitle } })
     setEditingListId(null)
   }
 
@@ -73,7 +107,8 @@ function BoardView() {
     e.preventDefault()
     if (!newCardTitle.trim()) return
     const list = currentBoard?.lists?.find(l => l._id === listId)
-    await createCard({ title: newCardTitle, list: listId, board: boardId, position: (list?.cards?.length || 0) })
+    const newCard = await createCard({ title: newCardTitle, list: listId, board: boardId, position: (list?.cards?.length || 0) })
+    emitCardCreated({ boardId, card: newCard })
     setNewCardTitle(''); setAddingCardToList(null)
   }
 
@@ -84,14 +119,14 @@ function BoardView() {
   const handleSaveTemplate = async () => {
     try {
       await saveAsTemplate(boardId)
-      alert('Board saved as template!')
+      setConfirmTemplate(false)
       setShowBoardMenu(false)
-    } catch { alert('Failed to save template') }
+    } catch (e) { console.error(e) }
   }
 
   const handleArchiveBoard = async () => {
-    if (!confirm('Archive this board?')) return
     await archiveBoard(boardId)
+    setConfirmArchive(false)
     navigate(-1)
   }
 
@@ -106,12 +141,14 @@ function BoardView() {
       newLists.splice(destination.index, 0, removed)
       useBoard.setState(state => ({ currentBoard: { ...state.currentBoard, lists: newLists } }))
       await reorderList(result.draggableId, destination.index)
+      emitListUpdated({ boardId, listId: result.draggableId, updates: { position: destination.index } })
       return
     }
 
     if (type === 'card') {
       const sourceListId = source.droppableId
       const destListId = destination.droppableId
+      const cardId = result.draggableId
 
       if (sourceListId === destListId) {
         const listIndex = lists.findIndex(l => l._id === sourceListId)
@@ -122,7 +159,9 @@ function BoardView() {
         const newLists = Array.from(lists)
         newLists[listIndex] = { ...list, cards: newCards }
         useBoard.setState(state => ({ currentBoard: { ...state.currentBoard, lists: newLists } }))
-        await reorderCard(result.draggableId, destination.index)
+        await reorderCard(cardId, destination.index)
+        // Emit real-time event
+        emitCardMoved({ boardId, cardId, sourceListId, destListId: sourceListId, sourceIndex: source.index, destIndex: destination.index })
       } else {
         const sourceListIdx = lists.findIndex(l => l._id === sourceListId)
         const destListIdx = lists.findIndex(l => l._id === destListId)
@@ -134,7 +173,9 @@ function BoardView() {
         newLists[sourceListIdx] = { ...lists[sourceListIdx], cards: sourceCards }
         newLists[destListIdx] = { ...lists[destListIdx], cards: destCards }
         useBoard.setState(state => ({ currentBoard: { ...state.currentBoard, lists: newLists } }))
-        await moveCard(result.draggableId, destListId, destination.index)
+        await moveCard(cardId, destListId, destination.index)
+        // Emit real-time event
+        emitCardMoved({ boardId, cardId, sourceListId, destListId, sourceIndex: source.index, destIndex: destination.index })
       }
     }
   }
@@ -200,10 +241,10 @@ function BoardView() {
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowBoardMenu(false)} />
                 <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-[#dadce0] py-1 z-20 w-48">
-                  <button onClick={handleSaveTemplate} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-[#1d1d1f] hover:bg-[#f1f3f4]">
+                  <button onClick={() => { setConfirmTemplate(true); setShowBoardMenu(false) }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-[#1d1d1f] hover:bg-[#f1f3f4]">
                     <Copy className="w-4 h-4" /> Save as Template
                   </button>
-                  <button onClick={handleArchiveBoard} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-[#fb8c00] hover:bg-[#fb8c00]/5">
+                  <button onClick={() => { setConfirmArchive(true); setShowBoardMenu(false) }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-[#fb8c00] hover:bg-[#fb8c00]/5">
                     <Archive className="w-4 h-4" /> Archive Board
                   </button>
                 </div>
@@ -265,11 +306,11 @@ function BoardView() {
                                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#1d1d1f] hover:bg-[#f1f3f4]">
                                     <Edit2 className="w-3.5 h-3.5" /> Rename
                                   </button>
-                                  <button onClick={async () => { await archiveList(list._id); setListMenuId(null) }}
+                                  <button onClick={async () => { await archiveList(list._id); emitListUpdated({ boardId, listId: list._id, updates: { archived: true } }); setListMenuId(null) }}
                                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#5f6368] hover:bg-[#f1f3f4]">
                                     <Archive className="w-3.5 h-3.5" /> Archive
                                   </button>
-                                  <button onClick={async () => { await deleteList(list._id); setListMenuId(null) }}
+                                  <button onClick={async () => { await deleteList(list._id); emitListUpdated({ boardId, listId: list._id, updates: { deleted: true } }); setListMenuId(null) }}
                                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#ff3b30] hover:bg-[#ff3b30]/5">
                                     <Trash2 className="w-3.5 h-3.5" /> Delete
                                   </button>
@@ -381,7 +422,41 @@ function BoardView() {
 
       {/* Card Modal */}
       {selectedCard && (
-        <CardModal card={selectedCard} onClose={() => setSelectedCard(null)} onUpdated={handleCardUpdated} />
+        <CardModal card={selectedCard} onClose={() => setSelectedCard(null)} onUpdated={() => { handleCardUpdated(); emitCardUpdated({ boardId, cardId: selectedCard._id, updates: {} }) }} />
+      )}
+
+      {/* Archive Board Confirm Modal */}
+      {confirmArchive && (
+        <div className={modalOverlay}>
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center">
+            <div className="w-12 h-12 rounded-full bg-[#fb8c00]/10 flex items-center justify-center mx-auto mb-4">
+              <Archive className="w-6 h-6 text-[#fb8c00]" />
+            </div>
+            <h2 className="text-lg font-semibold text-[#1d1d1f] mb-2">Archive board?</h2>
+            <p className="text-sm text-[#5f6368] mb-6">Archiving will hide this board. You can restore it later from your workspace settings.</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setConfirmArchive(false)} className="px-5 py-2 text-sm font-medium border border-[#dadce0] rounded-full hover:bg-[#f1f3f4] transition-colors">Cancel</button>
+              <button onClick={handleArchiveBoard} className="px-5 py-2 text-sm font-medium bg-[#fb8c00] text-white rounded-full hover:bg-[#e65100] transition-colors">Archive</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Save Template Confirm Modal */}
+      {confirmTemplate && (
+        <div className={modalOverlay}>
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center">
+            <div className="w-12 h-12 rounded-full bg-[#1a73e8]/10 flex items-center justify-center mx-auto mb-4">
+              <Copy className="w-6 h-6 text-[#1a73e8]" />
+            </div>
+            <h2 className="text-lg font-semibold text-[#1d1d1f] mb-2">Save as template?</h2>
+            <p className="text-sm text-[#5f6368] mb-6">This board's structure (lists) will be saved as a reusable template.</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setConfirmTemplate(false)} className="px-5 py-2 text-sm font-medium border border-[#dadce0] rounded-full hover:bg-[#f1f3f4] transition-colors">Cancel</button>
+              <button onClick={handleSaveTemplate} className="px-5 py-2 text-sm font-medium bg-[#1a73e8] text-white rounded-full hover:bg-[#1558b0] transition-colors">Save Template</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

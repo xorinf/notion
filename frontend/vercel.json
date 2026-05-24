@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://notion-backend-f9s6.onrender.com/$1"
+    }
+  ]
+}

@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useBoard } from '../../store/boardStore'
 import axios from 'axios'
 import {
-  X, Loader2, Tag, CheckSquare, MessageSquare, Trash2, Calendar, Flag, Plus,
+  X, Loader2, CheckSquare, MessageSquare, Trash2, Flag, Plus,
   Paperclip, Download, FileText, Users, Archive, CheckCircle2, Circle
 } from 'lucide-react'
-import { inputClass, labelClass, primaryBtn, secondaryBtn, badgeClass, modalOverlay } from '../styles/common'
+import { inputClass, labelClass, badgeClass, modalOverlay } from '../styles/common'
 
 const PRIORITY_OPTIONS = ['LOW', 'MEDIUM', 'HIGH', 'URGENT']
 const PRIORITY_COLORS = {
@@ -32,8 +32,6 @@ function CardModal({ card, onClose, onUpdated }) {
   const completeCard = useBoard(s => s.completeCard)
   const incompleteCard = useBoard(s => s.incompleteCard)
   const archiveCard = useBoard(s => s.archiveCard)
-  const assignCardMember = useBoard(s => s.assignCardMember)
-  const removeCardMember = useBoard(s => s.removeCardMember)
 
   const [detail, setDetail] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -46,11 +44,11 @@ function CardModal({ card, onClose, onUpdated }) {
   const [newCheckItem, setNewCheckItem] = useState('')
   const [showLabelPicker, setShowLabelPicker] = useState(false)
   const [activeTab, setActiveTab] = useState('details')
-  const [memberEmail, setMemberEmail] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmArchive, setConfirmArchive] = useState(false)
+  const [attachmentError, setAttachmentError] = useState('')
 
-  useEffect(() => { fetchCard() }, [card._id])
-
-  const fetchCard = async () => {
+  const fetchCard = useCallback(async () => {
     try {
       setLoading(true)
       const res = await axios.get(`/card/${card._id}`, { withCredentials: true })
@@ -62,7 +60,9 @@ function CardModal({ card, onClose, onUpdated }) {
       setDueDate(c.dueDate ? c.dueDate.split('T')[0] : '')
     } catch (err) { console.error(err) }
     finally { setLoading(false) }
-  }
+  }, [card._id])
+
+  useEffect(() => { fetchCard() }, [fetchCard])
 
   const handleSave = async () => {
     setSaving(true)
@@ -74,7 +74,6 @@ function CardModal({ card, onClose, onUpdated }) {
   }
 
   const handleDelete = async () => {
-    if (!confirm('Delete this card?')) return
     await deleteCard(card._id, card.list?._id || card.list)
     onUpdated?.(); onClose()
   }
@@ -90,7 +89,6 @@ function CardModal({ card, onClose, onUpdated }) {
   }
 
   const handleArchive = async () => {
-    if (!confirm('Archive this card?')) return
     setSaving(true)
     try {
       await archiveCard(card._id)
@@ -138,17 +136,17 @@ function CardModal({ card, onClose, onUpdated }) {
   const handleUploadAttachment = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
+    setAttachmentError('')
     setSaving(true)
     try { await uploadAttachment(card._id, file); await fetchCard(); onUpdated?.() }
-    catch (err) { console.error(err); alert('Failed to upload attachment') }
+    catch (err) { console.error(err); setAttachmentError('Failed to upload attachment') }
     finally { setSaving(false) }
   }
 
   const handleDeleteAttachment = async (attachmentId) => {
-    if (!confirm('Delete this attachment?')) return
     setSaving(true)
     try { await deleteAttachment(attachmentId); await fetchCard(); onUpdated?.() }
-    catch (err) { console.error(err); alert('Failed to delete attachment') }
+    catch (err) { console.error(err) }
     finally { setSaving(false) }
   }
 
@@ -194,10 +192,10 @@ function CardModal({ card, onClose, onUpdated }) {
             />
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <button onClick={handleArchive} className="p-2 hover:bg-[#fb8c00]/10 rounded-lg text-[#fb8c00] transition-colors" title="Archive">
+            <button onClick={() => setConfirmArchive(true)} className="p-2 hover:bg-[#fb8c00]/10 rounded-lg text-[#fb8c00] transition-colors" title="Archive">
               <Archive className="w-4 h-4" />
             </button>
-            <button onClick={handleDelete} className="p-2 hover:bg-[#ff3b30]/10 rounded-lg text-[#ff3b30] transition-colors" title="Delete">
+            <button onClick={() => setConfirmDelete(true)} className="p-2 hover:bg-[#ff3b30]/10 rounded-lg text-[#ff3b30] transition-colors" title="Delete">
               <Trash2 className="w-4 h-4" />
             </button>
             <button onClick={onClose} className="p-2 hover:bg-[#f1f3f4] rounded-lg text-[#5f6368] transition-colors">
@@ -417,6 +415,40 @@ function CardModal({ card, onClose, onUpdated }) {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirm Modal */}
+      {confirmDelete && (
+        <div className={modalOverlay} style={{zIndex:60}}>
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center">
+            <div className="w-12 h-12 rounded-full bg-[#ff3b30]/10 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-6 h-6 text-[#ff3b30]" />
+            </div>
+            <h2 className="text-lg font-semibold text-[#1d1d1f] mb-2">Delete card?</h2>
+            <p className="text-sm text-[#5f6368] mb-6">This will permanently delete "{detail.title}". This action cannot be undone.</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setConfirmDelete(false)} className="px-5 py-2.5 text-sm font-medium border border-[#dadce0] rounded-full hover:bg-[#f1f3f4] transition-colors">Cancel</button>
+              <button onClick={handleDelete} className="px-5 py-2.5 text-sm font-medium bg-[#ff3b30] text-white rounded-full hover:bg-[#d62c23] transition-colors">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Archive Confirm Modal */}
+      {confirmArchive && (
+        <div className={modalOverlay} style={{zIndex:60}}>
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center">
+            <div className="w-12 h-12 rounded-full bg-[#fb8c00]/10 flex items-center justify-center mx-auto mb-4">
+              <Archive className="w-6 h-6 text-[#fb8c00]" />
+            </div>
+            <h2 className="text-lg font-semibold text-[#1d1d1f] mb-2">Archive card?</h2>
+            <p className="text-sm text-[#5f6368] mb-6">This card will be archived and hidden from the board. You can restore it later.</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setConfirmArchive(false)} className="px-5 py-2.5 text-sm font-medium border border-[#dadce0] rounded-full hover:bg-[#f1f3f4] transition-colors">Cancel</button>
+              <button onClick={handleArchive} className="px-5 py-2.5 text-sm font-medium bg-[#fb8c00] text-white rounded-full hover:bg-[#e65100] transition-colors">Archive</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
