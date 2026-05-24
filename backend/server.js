@@ -39,6 +39,15 @@ const io = new SocketIO(httpServer, {
 io.on("connection", (socket) => {
   console.log(`Socket connected: ${socket.id}`);
 
+  // Workspace room management
+  socket.on("join-workspace", (workspaceId) => {
+    socket.join(`workspace:${workspaceId}`);
+  });
+
+  socket.on("leave-workspace", (workspaceId) => {
+    socket.leave(`workspace:${workspaceId}`);
+  });
+
   // Board room management
   socket.on("join-board", (boardId) => {
     socket.join(`board:${boardId}`);

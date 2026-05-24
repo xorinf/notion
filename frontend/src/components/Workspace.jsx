@@ -4,6 +4,7 @@ import { useWorkspace } from '../../store/workspaceStore'
 import { useAuth } from '../../store/authStore'
 import { useBoard } from '../../store/boardStore'
 import { usePage } from '../../store/pageStore'
+import { useSocket } from '../../store/socketStore'
 import { 
   Briefcase, Users, Activity, Settings, 
   Search, Plus, X, Shield, Edit2, Loader2, Trash2, LayoutGrid, ChevronRight, FileText, Mail
@@ -23,10 +24,12 @@ function Workspace() {
   const loading = useWorkspace(state => state.loading)
   const error = useWorkspace(state => state.error)
   const updateWorkspace = useWorkspace(state => state.updateWorkspace)
-  const addMember = useWorkspace(state => state.addMember)
-  const updateMemberRole = useWorkspace(state => state.updateMemberRole)
   const removeMember = useWorkspace(state => state.removeMember)
+  const updateMemberRole = useWorkspace(state => state.updateMemberRole)
   const fetchWorkspaceActivity = useWorkspace(state => state.fetchWorkspaceActivity)
+  
+  const socket = useSocket(state => state.socket)
+  const addMember = useWorkspace(state => state.addMember)
   const sendInvite = useWorkspace(state => state.sendInvite)
   const fetchPendingInvites = useWorkspace(state => state.fetchPendingInvites)
   const cancelInviteAction = useWorkspace(state => state.cancelInvite)
@@ -91,8 +94,24 @@ function Workspace() {
       getWorkspaceById(id)
       fetchBoards(id)
       fetchPages(id)
+
+      if (socket) {
+        socket.emit('join-workspace', id)
+        
+        const handleUpdate = () => {
+          getWorkspaceById(id)
+          if (activeTab === 'members') fetchPending()
+        }
+        
+        socket.on('workspace-updated', handleUpdate)
+        
+        return () => {
+          socket.emit('leave-workspace', id)
+          socket.off('workspace-updated', handleUpdate)
+        }
+      }
     }
-  }, [id])
+  }, [id, socket, activeTab])
 
   useEffect(() => {
     if (activeTab === 'activity' && id) {

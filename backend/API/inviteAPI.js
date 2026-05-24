@@ -45,6 +45,12 @@ inviteAPP.post("/", verifyToken(), async(req,res,next)=>{
             })
         }
 
+        // Emit real-time update
+        const io = req.app.get("io")
+        if (io) {
+            io.to(`workspace:${workspaceId}`).emit("workspace-updated")
+        }
+
         res.status(201).json({message:"Invite sent successfully",payload:invite})
     } catch(err) { next(err) }
 })
@@ -84,6 +90,12 @@ inviteAPP.post("/accept/:inviteToken", verifyToken(), async(req,res,next)=>{
             $addToSet: { workspaces: workspaceId }
         })
         
+        // Emit real-time update
+        const io = req.app.get("io")
+        if (io) {
+            io.to(`workspace:${workspaceId}`).emit("workspace-updated")
+        }
+
         res.status(200).json({message:"Invite accepted successfully",payload:invite})
     } catch(err) { next(err) }
 })
@@ -132,6 +144,12 @@ inviteAPP.delete("/:id", verifyToken(), async(req,res,next)=>{
         const invite = await inviteModel.findByIdAndDelete(inviteId)
         if(!invite) return res.status(404).json({message:"Invite not found"})
         
+        // Emit real-time update
+        const io = req.app.get("io")
+        if (io) {
+            io.to(`workspace:${invite.workspace}`).emit("workspace-updated")
+        }
+
         res.status(200).json({message:"Invite deleted successfully"})
     } catch(err) { next(err) }
 })
