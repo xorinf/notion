@@ -1,25 +1,34 @@
 import { createBrowserRouter, RouterProvider } from "react-router";
-import { useEffect } from "react";
+import { useEffect, Suspense, lazy } from "react";
 import { useAuth } from "../store/authStore";
 import RootLayout from "./components/RootLayout";
 import Home from "./components/Home";
-import Register from "./components/Register";
-import Login from "./components/Login";
-import DashBoard from "./components/DashBoard";
-import Profile from "./components/Profile";
-import Task from "./components/Task";
-import Journal from "./components/Journal";
-import Page from "./components/Page";
-import Search from "./components/Search";
-import HomeDashBoard from "./components/HomeDashBoard";
-import Workspace from "./components/Workspace";
-import ChangePassword from "./components/ChangePassword";
-import BoardView from "./components/BoardView";
-import Notification from "./components/Notification";
-import Logout from "./components/Logout";
-import InviteHandler from "./components/InviteHandler";
 import { ProtectedRoute, PublicRoute } from "./components/AuthGuards";
-import Superadmin from "./components/Superadmin";
+
+// Lazy-loaded components for code splitting
+const Register = lazy(() => import("./components/Register"));
+const Login = lazy(() => import("./components/Login"));
+const DashBoard = lazy(() => import("./components/DashBoard"));
+const Profile = lazy(() => import("./components/Profile"));
+const Task = lazy(() => import("./components/Task"));
+const Journal = lazy(() => import("./components/Journal"));
+const Page = lazy(() => import("./components/Page"));
+const Search = lazy(() => import("./components/Search"));
+const HomeDashBoard = lazy(() => import("./components/HomeDashBoard"));
+const Workspace = lazy(() => import("./components/Workspace"));
+const ChangePassword = lazy(() => import("./components/ChangePassword"));
+const BoardView = lazy(() => import("./components/BoardView"));
+const Notification = lazy(() => import("./components/Notification"));
+const Logout = lazy(() => import("./components/Logout"));
+const InviteHandler = lazy(() => import("./components/InviteHandler"));
+const Superadmin = lazy(() => import("./components/Superadmin"));
+
+// Minimal global loader while chunks download
+const GlobalLoader = () => (
+  <div className="flex items-center justify-center min-h-screen bg-white">
+    <div className="w-8 h-8 border-4 border-[#1a73e8] border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
 
 const router = createBrowserRouter([
   {
@@ -84,7 +93,11 @@ function App() {
     checkAuth();
   }, [checkAuth]);
 
-  return <RouterProvider router={router} />;
+  return (
+    <Suspense fallback={<GlobalLoader />}>
+      <RouterProvider router={router} />
+    </Suspense>
+  );
 }
 
 export default App;

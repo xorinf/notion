@@ -554,7 +554,7 @@ export default function Superadmin() {
                           <div className="sa-user-cell">
                             <div className="sa-avatar">
                               {u.avatarUrl ? (
-                                <img src={u.avatarUrl} alt={initials(u)} />
+                                <img src={u.avatarUrl} alt={initials(u)} loading="lazy" width="28" height="28" />
                               ) : (
                                 initials(u)
                               )}

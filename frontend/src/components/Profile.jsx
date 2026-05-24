@@ -193,6 +193,9 @@ function Profile() {
                 <img
                   src={currentUser.avatarUrl}
                   alt="Avatar"
+                  loading="lazy"
+                  width="80"
+                  height="80"
                   className="w-20 h-20 rounded-full object-cover border border-[#dadce0] shadow-sm"
                 />
               ) : (

@@ -359,7 +359,7 @@ function CardModal({ card, onClose, onUpdated }) {
                     <div key={att._id} className="border border-[#dadce0] rounded-xl p-3 flex gap-3 items-center group bg-white">
                       <div className="w-10 h-10 rounded bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
                         {att.fileType?.includes('image') ? (
-                          <img src={att.url} alt={att.filename} className="w-full h-full object-cover rounded" />
+                          <img src={att.url} alt={att.filename} loading="lazy" className="w-full h-full object-cover rounded" />
                         ) : ( <FileText className="w-5 h-5" /> )}
                       </div>
                       <div className="min-w-0 flex-1">
