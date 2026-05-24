@@ -9,7 +9,13 @@ workspaceAPP.post("/", verifyToken(), async(req,res,next)=>{
     try {
         const {name,description,icon}=req.body
         const userId=req.user.id
-        const workspace=await workspaceModel.create({name,description,icon,createdBy:userId})
+        const workspace=await workspaceModel.create({
+            name,
+            description,
+            icon,
+            createdBy:userId,
+            members: [{ user: userId, role: "ADMIN" }]
+        })
         await userModel.findByIdAndUpdate(userId, { $push: { workspaces: workspace._id } })
         res.status(201).json({message:"Workspace created successfully",payload:workspace})
     } catch(err) { next(err) }

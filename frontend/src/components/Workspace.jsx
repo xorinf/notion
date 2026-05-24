@@ -148,7 +148,8 @@ function Workspace() {
   }
 
   const currentUserRole = currentWorkspace.members?.find(m => m.user?._id === currentUser?._id)?.role || 'MEMBER'
-  const isAdmin = currentUserRole === 'ADMIN'
+  const isCreator = currentWorkspace.createdBy === currentUser?._id || currentWorkspace.createdBy?._id === currentUser?._id
+  const isAdmin = currentUserRole === 'ADMIN' || isCreator
 
   const handleUpdateWorkspace = async (e) => {
     e.preventDefault()
