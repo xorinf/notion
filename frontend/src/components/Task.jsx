@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { useWorkspace } from '../../store/workspaceStore'
 import { useBoard } from '../../store/boardStore'
 import { useAuth } from '../../store/authStore'
@@ -25,6 +26,9 @@ function Task() {
   const workspaces = useWorkspace(state => state.workspaces)
   const fetchWorkspaces = useWorkspace(state => state.fetchWorkspaces)
   const fetchBoards = useBoard(state => state.fetchBoards)
+  const getBoardById = useBoard(state => state.getBoardById)
+  const updateCard = useBoard(state => state.updateCard)
+  const moveCard = useBoard(state => state.moveCard)
   const currentUser = useAuth(state => state.currentUser)
 
   const [allCards, setAllCards] = useState([])
@@ -65,12 +69,12 @@ function Task() {
           }
         } catch (e) { /* skip */ }
       }
-      setAllCards(cards)
+      setAllCards(Array.from(new Map(cards.map(c => [c._id, c])).values()))
       setLoading(false)
     }
     if (workspaces.length > 0) loadAllCards()
     else setLoading(false)
-  }, [workspaces])
+  }, [workspaces, fetchBoards, getBoardById])
 
   const handleCardUpdated = async () => {
     // Reload would be expensive, just close modal
@@ -84,16 +88,19 @@ function Task() {
     return matchSearch && matchPriority && !c.archived
   })
 
-  // Categorize
-  const todo = filtered.filter(c => !c.isCompleted && c.listTitle?.toLowerCase().includes('to do'))
-  const inProgress = filtered.filter(c => !c.isCompleted && !c.listTitle?.toLowerCase().includes('to do') && !c.listTitle?.toLowerCase().includes('done'))
-  const completed = filtered.filter(c => c.isCompleted || c.listTitle?.toLowerCase().includes('done'))
+  // Categorize using card.completed (if backend supports it) or listTitle fallback
+  const isTodo = (c) => !c.completed && c.listTitle?.toLowerCase().includes('to do')
+  const isDone = (c) => c.completed || c.listTitle?.toLowerCase().includes('done')
+  const isInProgress = (c) => !c.completed && !isTodo(c) && !isDone(c)
 
-  // Fallback: if categorization produces nothing meaningful, split evenly
+  const todo = filtered.filter(isTodo)
+  const inProgress = filtered.filter(isInProgress)
+  const completed = filtered.filter(isDone)
+
+  // Fallback uncategorized -> in-progress
   const uncategorized = filtered.filter(c =>
     !todo.includes(c) && !inProgress.includes(c) && !completed.includes(c)
   )
-  // Add uncategorized to in-progress
   const finalInProgress = [...inProgress, ...uncategorized]
 
   const columns = [
@@ -101,6 +108,51 @@ function Task() {
     { title: 'In Progress', icon: Clock, color: '#1a73e8', cards: finalInProgress },
     { title: 'Completed', icon: CheckCircle2, color: '#34a853', cards: completed },
   ]
+
+  const onDragEnd = async (result) => {
+    const { source, destination, draggableId } = result
+    if (!destination) return
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return
+
+    const card = allCards.find(c => c._id === draggableId)
+    if (!card) return
+
+    const targetStatus = destination.droppableId
+    const updatedCard = { ...card }
+
+    // Optimistic Update
+    if (targetStatus === 'Completed') {
+      updatedCard.completed = true
+      updatedCard.listTitle = 'Done'
+    } else {
+      updatedCard.completed = false
+      if (targetStatus === 'To Do') updatedCard.listTitle = 'To Do'
+      if (targetStatus === 'In Progress') updatedCard.listTitle = 'In Progress'
+    }
+
+    setAllCards(prev => prev.map(c => c._id === draggableId ? updatedCard : c))
+
+    try {
+      const boardData = await getBoardById(card.boardId)
+      if (!boardData?.lists?.length) return
+
+      let targetListId = boardData.lists[0]._id // Default To Do
+      if (targetStatus === 'Completed') {
+        targetListId = boardData.lists[boardData.lists.length - 1]._id
+      } else if (targetStatus === 'In Progress') {
+        targetListId = boardData.lists[Math.floor(boardData.lists.length / 2)]._id
+      }
+
+      await updateCard(card._id, { completed: targetStatus === 'Completed' })
+      
+      if (card.list !== targetListId) {
+        await moveCard(card._id, targetListId, 0)
+      }
+    } catch (err) {
+      console.error("Failed to move card cross-board:", err)
+      // On error, let the next refresh fix the state
+    }
+  }
 
   if (loading) {
     return (
@@ -155,72 +207,89 @@ function Task() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {columns.map(col => (
-            <div key={col.title} className={taskColumn}>
-              <div className={taskColumnHeader}>
-                <h3 className={taskColumnTitle}>
-                  <col.icon className="w-4 h-4" style={{ color: col.color }} />
-                  {col.title}
-                  <span className={taskColumnCount}>{col.cards.length}</span>
-                </h3>
-              </div>
-              <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
-                {col.cards.length === 0 ? (
-                  <p className="text-xs text-[#80868b] text-center py-6">No tasks</p>
-                ) : (
-                  col.cards.map(card => (
-                    <div
-                      key={card._id}
-                      onClick={() => setSelectedCard(card)}
-                      className={taskCard}
-                    >
-                      {/* Labels */}
-                      {card.labels?.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {card.labels.slice(0, 3).map((label, i) => (
-                            <span
-                              key={i}
-                              className={`${badgeClass}`}
-                              style={{ backgroundColor: label.color + '22', color: label.color }}
-                            >
-                              {label.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <p className="text-sm text-[#1d1d1f] font-medium leading-snug">{card.title}</p>
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        {card.priority && (
-                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${PRIORITY_COLORS[card.priority] || ''}`}>
-                            {card.priority}
-                          </span>
-                        )}
-                        {card.dueDate && (
-                          <span className="text-[10px] text-[#80868b] flex items-center gap-0.5">
-                            <Calendar className="w-3 h-3" />
-                            {new Date(card.dueDate).toLocaleDateString()}
-                          </span>
-                        )}
-                        {card.checklist?.length > 0 && (
-                          <span className="text-[10px] text-[#80868b]">
-                            ✓ {card.checklist.filter(c => c.completed).length}/{card.checklist.length}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#f1f3f4]">
-                        <span className="text-[10px] text-[#a1a1a6] truncate flex items-center gap-1">
-                          <LayoutGrid className="w-3 h-3" />
-                          {card.boardTitle}
-                        </span>
-                      </div>
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {columns.map(col => (
+              <Droppable key={col.title} droppableId={col.title}>
+                {(provided, snapshot) => (
+                  <div 
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`${taskColumn} ${snapshot.isDraggingOver ? 'ring-2 ring-[#1a73e8]/20 bg-[#1a73e8]/[0.02]' : ''}`}
+                  >
+                    <div className={taskColumnHeader}>
+                      <h3 className={taskColumnTitle}>
+                        <col.icon className="w-4 h-4" style={{ color: col.color }} />
+                        {col.title}
+                        <span className={taskColumnCount}>{col.cards.length}</span>
+                      </h3>
                     </div>
-                  ))
+                    <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2 min-h-[150px]">
+                      {col.cards.length === 0 ? (
+                        <p className="text-xs text-[#80868b] text-center py-6">Drop tasks here</p>
+                      ) : (
+                        col.cards.map((card, index) => (
+                          <Draggable key={card._id} draggableId={card._id} index={index}>
+                            {(dragProvided, dragSnapshot) => (
+                              <div
+                                ref={dragProvided.innerRef}
+                                {...dragProvided.draggableProps}
+                                {...dragProvided.dragHandleProps}
+                                onClick={() => setSelectedCard(card)}
+                                className={`${taskCard} ${dragSnapshot.isDragging ? 'shadow-xl scale-[1.02] rotate-1 z-50 border-[#1a73e8]/50' : ''}`}
+                              >
+                                {/* Labels */}
+                                {card.labels?.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mb-2">
+                                    {card.labels.slice(0, 3).map((label, i) => (
+                                      <span
+                                        key={i}
+                                        className={`${badgeClass}`}
+                                        style={{ backgroundColor: label.color + '22', color: label.color }}
+                                      >
+                                        {label.name}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                                <p className="text-sm text-[#1d1d1f] font-medium leading-snug">{card.title}</p>
+                                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                  {card.priority && (
+                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${PRIORITY_COLORS[card.priority] || ''}`}>
+                                      {card.priority}
+                                    </span>
+                                  )}
+                                  {card.dueDate && (
+                                    <span className="text-[10px] text-[#80868b] flex items-center gap-0.5">
+                                      <Calendar className="w-3 h-3" />
+                                      {new Date(card.dueDate).toLocaleDateString()}
+                                    </span>
+                                  )}
+                                  {card.checklist?.length > 0 && (
+                                    <span className="text-[10px] text-[#80868b]">
+                                      ✓ {card.checklist.filter(c => c.completed).length}/{card.checklist.length}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#f1f3f4]">
+                                  <span className="text-[10px] text-[#a1a1a6] truncate flex items-center gap-1">
+                                    <LayoutGrid className="w-3 h-3" />
+                                    {card.boardTitle}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))
+                      )}
+                      {provided.placeholder}
+                    </div>
+                  </div>
                 )}
-              </div>
-            </div>
-          ))}
-        </div>
+              </Droppable>
+            ))}
+          </div>
+        </DragDropContext>
       )}
 
       {/* Card Modal */}
