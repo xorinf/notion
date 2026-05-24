@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { useBoard } from '../../store/boardStore'
 import { useSocket } from '../../store/socketStore'
+import { useAuth } from '../../store/authStore'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import {
   ArrowLeft, Plus, X, MoreHorizontal, Trash2, Edit2, Loader2, Archive,
-  Settings, Save, Filter, Users, Copy
+  Settings, Save, Filter, Users, Copy, Star
 } from 'lucide-react'
 import {
   primaryBtn, secondaryBtn, inputClass, labelClass, filterBtn, filterBtnActive,
@@ -39,6 +40,23 @@ function BoardView() {
   const archiveBoard = useBoard(s => s.archiveBoard)
   const saveAsTemplate = useBoard(s => s.saveAsTemplate)
   const updateBoard = useBoard(s => s.updateBoard)
+
+  const starredBoards = useAuth(state => state.starredItems.starredBoards)
+  const starBoard = useAuth(state => state.starBoard)
+  const unstarBoard = useAuth(state => state.unstarBoard)
+  const isBoardStarred = starredBoards?.some(b => b._id === boardId || b === boardId)
+
+  const handleToggleBoardStar = async () => {
+    try {
+      if (isBoardStarred) {
+        await unstarBoard(boardId)
+      } else {
+        await starBoard(boardId)
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   const { 
     joinBoard, leaveBoard, emitCardMoved, emitCardCreated, emitCardUpdated, 
@@ -214,8 +232,19 @@ function BoardView() {
         <button onClick={() => navigate(-1)} className="p-2 hover:bg-[#f1f3f4] rounded-lg transition-colors text-[#5f6368]">
           <ArrowLeft className="w-4 h-4" />
         </button>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-semibold text-[#1d1d1f] tracking-tight truncate">{currentBoard.title}</h1>
+        <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-semibold text-[#1d1d1f] tracking-tight truncate">{currentBoard.title}</h1>
+            <button
+              onClick={handleToggleBoardStar}
+              className={`p-1 rounded-lg transition-colors ${
+                isBoardStarred ? 'text-yellow-500 hover:bg-yellow-50' : 'text-[#80868b] hover:bg-[#f1f3f4] hover:text-[#1d1d1f]'
+              }`}
+              title={isBoardStarred ? "Remove from favorites" : "Add to favorites"}
+            >
+              <Star className="w-4 h-4" fill={isBoardStarred ? "currentColor" : "none"} />
+            </button>
+          </div>
           {currentBoard.description && <p className="text-xs text-[#5f6368] truncate">{currentBoard.description}</p>}
         </div>
         <div className="flex items-center gap-2">

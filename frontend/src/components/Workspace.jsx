@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router'
+import { useParams, useNavigate, useSearchParams } from 'react-router'
 import { useWorkspace } from '../../store/workspaceStore'
 import { useAuth } from '../../store/authStore'
 import { useBoard } from '../../store/boardStore'
@@ -39,14 +39,23 @@ function Workspace() {
   const [activity, setActivity] = useState([])
   const [pendingInvites, setPendingInvites] = useState([])
 
+  // Search params hook for pageId query param
+  const [searchParams, setSearchParams] = useSearchParams()
+  const pageIdParam = searchParams.get('pageId')
+
   // Board state
   const boards = useBoard(state => state.boards)
   const fetchBoards = useBoard(state => state.fetchBoards)
   const createBoardAction = useBoard(state => state.createBoard)
+  const getTemplates = useBoard(state => state.getTemplates)
+  const createFromTemplate = useBoard(state => state.createFromTemplate)
   const boardLoading = useBoard(state => state.loading)
+  
   const [showCreateBoard, setShowCreateBoard] = useState(false)
   const [newBoardTitle, setNewBoardTitle] = useState('')
   const [newBoardDesc, setNewBoardDesc] = useState('')
+  const [templates, setTemplates] = useState([])
+  const [selectedTemplateId, setSelectedTemplateId] = useState('')
   
   // Page state
   const pages = usePage(state => state.pages)
@@ -94,6 +103,27 @@ function Workspace() {
   useEffect(() => {
     fetchPending()
   }, [id, activeTab, fetchPendingInvites])
+
+  // Sync pageId query param with selectedPageId
+  useEffect(() => {
+    if (pageIdParam) {
+      setSelectedPageId(pageIdParam)
+    } else {
+      setSelectedPageId(null)
+    }
+  }, [pageIdParam])
+
+  // Fetch templates when Create Board modal opens
+  useEffect(() => {
+    if (showCreateBoard && id) {
+      getTemplates(id).then(data => {
+        setTemplates(data || [])
+      }).catch(err => console.error("Error loading templates", err))
+    } else {
+      setTemplates([])
+      setSelectedTemplateId('')
+    }
+  }, [showCreateBoard, id, getTemplates])
 
   if (loading && !currentWorkspace) {
     return (
@@ -159,8 +189,39 @@ function Workspace() {
     }
   }
 
+  const handleSubmitBoard = async (e) => {
+    e.preventDefault()
+    if (!newBoardTitle.trim()) return
+    try {
+      if (selectedTemplateId) {
+        await createFromTemplate(selectedTemplateId, newBoardTitle, id)
+      } else {
+        await createBoardAction({
+          title: newBoardTitle,
+          description: newBoardDesc,
+          workspace: id
+        })
+      }
+      setNewBoardTitle('')
+      setNewBoardDesc('')
+      setSelectedTemplateId('')
+      setShowCreateBoard(false)
+      fetchBoards(id)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handlePageBack = () => {
+    setSelectedPageId(null)
+    setSearchParams(params => {
+      params.delete('pageId')
+      return params
+    })
+  }
+
   if (selectedPageId) {
-    return <PageView workspaceId={id} pageId={selectedPageId} onBack={() => setSelectedPageId(null)} />
+    return <PageView workspaceId={id} pageId={selectedPageId} onBack={handlePageBack} />
   }
 
   return (
@@ -292,9 +353,24 @@ function Workspace() {
                   <h2 className="text-xl font-semibold text-[#1d1d1f]">Create Board</h2>
                   <button onClick={() => setShowCreateBoard(false)} className="p-2 hover:bg-[#efefed] rounded-full text-[#5f6368]"><X className="w-5 h-5" /></button>
                 </div>
-                <form onSubmit={async(e)=>{e.preventDefault();if(!newBoardTitle.trim())return;await createBoardAction({title:newBoardTitle,description:newBoardDesc,workspace:id});setNewBoardTitle('');setNewBoardDesc('');setShowCreateBoard(false);fetchBoards(id)}} className="p-6 space-y-4">
+                <form onSubmit={handleSubmitBoard} className="p-6 space-y-4">
                   <div><label className={labelClass}>Title</label><input required value={newBoardTitle} onChange={e=>setNewBoardTitle(e.target.value)} className={inputClass} placeholder="Board title" /></div>
                   <div><label className={labelClass}>Description</label><textarea value={newBoardDesc} onChange={e=>setNewBoardDesc(e.target.value)} className={`${inputClass} min-h-[80px] resize-none`} placeholder="Optional description" /></div>
+                  <div>
+                    <label className={labelClass}>Board Template (Optional)</label>
+                    <select
+                      value={selectedTemplateId}
+                      onChange={e => setSelectedTemplateId(e.target.value)}
+                      className={`${inputClass} bg-white`}
+                    >
+                      <option value="">Blank Board (Default)</option>
+                      {templates.map(tpl => (
+                        <option key={tpl._id} value={tpl._id}>
+                          {tpl.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="flex justify-end gap-3"><button type="button" onClick={()=>setShowCreateBoard(false)} className={secondaryBtn}>Cancel</button><button type="submit" disabled={boardLoading} className={primaryBtn}>Create</button></div>
                 </form>
               </div>

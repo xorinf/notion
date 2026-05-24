@@ -31,6 +31,7 @@ searchAPP.get('/', verifyToken(), async (req, res, next) => {
                     type: "Board",
                     title: board.title,
                     description: board.description || '',
+                    workspace: board.workspace,
                 })
             })
         }
@@ -53,6 +54,7 @@ searchAPP.get('/', verifyToken(), async (req, res, next) => {
                     type: "Page",
                     title: page.title,
                     description: page.content ? page.content.substring(0, 150) : '',
+                    workspace: page.workspace,
                 })
             })
         }

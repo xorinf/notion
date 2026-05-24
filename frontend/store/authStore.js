@@ -6,6 +6,7 @@ export const useAuth = create((set) => ({
   loading: false,
   isAuthenticated: false,
   error: null,
+  starredItems: { starredBoards: [], starredPages: [] },
 
   login: async (userCred) => {
     set({ loading: true, error: null });
@@ -152,6 +153,7 @@ export const useAuth = create((set) => ({
     try {
       const res = await axios.post(`/user/star/board/${boardId}`, {}, { withCredentials: true });
       set({ currentUser: res.data.payload });
+      await useAuth.getState().fetchStarred();
     } catch (err) {
       throw err;
     }
@@ -161,6 +163,7 @@ export const useAuth = create((set) => ({
     try {
       const res = await axios.delete(`/user/star/board/${boardId}`, { withCredentials: true });
       set({ currentUser: res.data.payload });
+      await useAuth.getState().fetchStarred();
     } catch (err) {
       throw err;
     }
@@ -170,6 +173,7 @@ export const useAuth = create((set) => ({
     try {
       const res = await axios.post(`/user/star/page/${pageId}`, {}, { withCredentials: true });
       set({ currentUser: res.data.payload });
+      await useAuth.getState().fetchStarred();
     } catch (err) {
       throw err;
     }
@@ -179,6 +183,7 @@ export const useAuth = create((set) => ({
     try {
       const res = await axios.delete(`/user/star/page/${pageId}`, { withCredentials: true });
       set({ currentUser: res.data.payload });
+      await useAuth.getState().fetchStarred();
     } catch (err) {
       throw err;
     }
@@ -188,8 +193,9 @@ export const useAuth = create((set) => ({
     set({ loading: true, error: null });
     try {
       const res = await axios.get("/user/starred", { withCredentials: true });
-      set({ loading: false });
-      return res.data.payload;
+      const payload = res.data.payload || { starredBoards: [], starredPages: [] };
+      set({ loading: false, starredItems: payload });
+      return payload;
     } catch (err) {
       set({ error: err.response?.data?.message || "Failed to fetch starred items", loading: false });
       throw err;

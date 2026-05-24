@@ -55,9 +55,18 @@ function Search() {
   }, [query, selectedWs, typeFilter, currentWorkspace?._id]);
 
   const handleResultClick = (item) => {
-    if (item.type === 'Board') navigate(`/dashboard/board/${item._id}`);
-    else if (item.type === 'Page') navigate(`/dashboard/page`);
-    else if (item.type === 'Card' && item.board) navigate(`/dashboard/board/${item.board}`);
+    if (item.type === 'Board') {
+      navigate(`/dashboard/board/${item._id}`)
+    } else if (item.type === 'Page') {
+      const wsId = item.workspace || selectedWs || currentWorkspace?._id || workspaces[0]?._id
+      if (wsId) {
+        navigate(`/dashboard/workspace/${wsId}?pageId=${item._id}`)
+      } else {
+        navigate(`/dashboard/page`)
+      }
+    } else if (item.type === 'Card' && item.board) {
+      navigate(`/dashboard/board/${item.board}`)
+    }
   }
 
   const activeWs = selectedWs === 'all'

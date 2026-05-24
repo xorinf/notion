@@ -35,6 +35,9 @@ export default function PageView({ workspaceId, pageId, onBack }) {
   const [remoteEditors, setRemoteEditors] = useState({});
 
   const currentUser = useAuth((state) => state.currentUser);
+  const starredPages = useAuth((state) => state.starredItems.starredPages);
+  const starPage = useAuth((state) => state.starPage);
+  const unstarPage = useAuth((state) => state.unstarPage);
   const { joinPage, leavePage, emitPageUpdated, emitPageEditing, socket } = useSocket();
 
   const saveTimerRef = useRef(null);
@@ -145,8 +148,17 @@ export default function PageView({ workspaceId, pageId, onBack }) {
   };
 
   const handleToggleFavorite = async () => {
-    await toggleFavorite(pageId);
-    loadPage();
+    try {
+      if (isFavorite) {
+        await unstarPage(pageId)
+      } else {
+        await starPage(pageId)
+      }
+      await toggleFavorite(pageId);
+      loadPage();
+    } catch (err) {
+      console.error(err)
+    }
   };
 
   const handleSetCover = async (gradient) => {
@@ -199,7 +211,7 @@ export default function PageView({ workspaceId, pageId, onBack }) {
     );
   }
 
-  const isFavorite = currentPage.isFavorite;
+  const isFavorite = starredPages?.some(p => p._id === pageId || p === pageId) || currentPage.isFavorite;
 
   return (
     <div className="flex-1 bg-white h-full overflow-y-auto relative flex flex-col">

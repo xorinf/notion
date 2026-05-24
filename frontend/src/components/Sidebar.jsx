@@ -16,6 +16,7 @@ import {
   FileText,
   Briefcase,
   Hash,
+  Star,
 } from 'lucide-react'
 import { useAuth } from '../../store/authStore'
 import { useWorkspace } from '../../store/workspaceStore'
@@ -27,6 +28,7 @@ function Sidebar() {
   const logout = useAuth((state) => state.logout)
   const authLoading = useAuth((state) => state.loading)
   const currentUser = useAuth((state) => state.currentUser)
+  const fetchStarred = useAuth((state) => state.fetchStarred)
 
   const workspaces = useWorkspace((state) => state.workspaces)
   const fetchWorkspaces = useWorkspace((state) => state.fetchWorkspaces)
@@ -48,11 +50,13 @@ function Sidebar() {
   const [newWsName, setNewWsName] = useState('')
   const [selectedPageId, setSelectedPageId] = useState(null)
   const [selectedWsId, setSelectedWsId] = useState(null)
+  const starredItems = useAuth((state) => state.starredItems)
 
   useEffect(() => {
     getUnreadCount()
     fetchWorkspaces()
-  }, [getUnreadCount, fetchWorkspaces])
+    fetchStarred()
+  }, [getUnreadCount, fetchWorkspaces, fetchStarred])
 
   const handleLogout = async () => {
     await logout()
@@ -159,6 +163,39 @@ function Sidebar() {
           Profile
         </NavLink>
 
+        {/* Favorites / Starred Section */}
+        {(starredItems.starredPages?.length > 0 || starredItems.starredBoards?.length > 0) && (
+          <div className="mt-5 mb-2">
+            <div className="px-3 py-1 flex items-center justify-between text-[10px] font-semibold text-[#6b7280] tracking-widest uppercase">
+              <span className="flex items-center gap-1.5">
+                <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" /> Favorites
+              </span>
+            </div>
+            <div className="space-y-0.5 mt-1 px-1">
+              {starredItems.starredPages.map((page) => (
+                <button
+                  key={page._id}
+                  onClick={() => navigate(`/dashboard/workspace/${page.workspace}?pageId=${page._id}`)}
+                  className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-[#9ba3af] hover:text-white hover:bg-white/8 transition-all text-left"
+                >
+                  <span className="text-sm shrink-0">{page.icon || '📄'}</span>
+                  <span className="text-xs truncate font-medium">{page.title || 'Untitled Page'}</span>
+                </button>
+              ))}
+              {starredItems.starredBoards.map((board) => (
+                <button
+                  key={board._id}
+                  onClick={() => navigate(`/dashboard/board/${board._id}`)}
+                  className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-[#9ba3af] hover:text-white hover:bg-white/8 transition-all text-left"
+                >
+                  <span className="text-sm shrink-0">📋</span>
+                  <span className="text-xs truncate font-medium">{board.title}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Workspaces Section */}
         <div className="mt-5 mb-1 px-3 flex items-center justify-between">
           <span className="text-[10px] font-semibold text-[#6b7280] tracking-widest uppercase">
@@ -244,7 +281,7 @@ function Sidebar() {
                   wsPages[ws._id]?.map((page) => (
                     <button
                       key={page._id}
-                      onClick={() => navigate(`/dashboard/workspace/${ws._id}`)}
+                      onClick={() => navigate(`/dashboard/workspace/${ws._id}?pageId=${page._id}`)}
                       className="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[#6b7280] hover:text-white hover:bg-white/8 transition-all text-left"
                     >
                       <span className="text-sm shrink-0">{page.icon || '📄'}</span>
