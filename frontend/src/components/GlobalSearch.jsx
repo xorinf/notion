@@ -1,3 +1,9 @@
+/**
+ * @file GlobalSearch.jsx
+ * @module GlobalSearch
+ * @description React component for GlobalSearch. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useSearch } from "../../store/searchStore";

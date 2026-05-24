@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+/**
+ * @module ListSchema
+ * @description Represents a column/list within a Kanban board.
+ * Maintains an ordered array of Card references.
+ */
 export const listSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
 

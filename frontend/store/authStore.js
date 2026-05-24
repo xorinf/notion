@@ -1,3 +1,9 @@
+/**
+ * @file authStore.js
+ * @module authStore
+ * @description Zustand global state store for authStore. Manages React state and API integrations.
+ */
+
 import { create } from "zustand";
 import axios from "axios";
 

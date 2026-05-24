@@ -1,3 +1,9 @@
+/**
+ * @file Superadmin.jsx
+ * @module Superadmin
+ * @description React component for Superadmin. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useSuperadmin } from '../../store/superadminStore';

@@ -1,3 +1,9 @@
+/**
+ * @file notificationStore.js
+ * @module notificationStore
+ * @description Zustand global state store for notificationStore. Manages React state and API integrations.
+ */
+
 import { create } from "zustand";
 import axios from "axios";
 

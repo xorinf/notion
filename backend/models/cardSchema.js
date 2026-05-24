@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+/**
+ * @module CardSchema
+ * @description The core task entity in the Kanban system. Cards belong to a List
+ * and contain highly detailed metadata (labels, checklists, dueDate, comments, etc.).
+ */
 export const cardSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
   description: { type: String, default: "" },

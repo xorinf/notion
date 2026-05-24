@@ -1,3 +1,9 @@
+/**
+ * @file pageStore.js
+ * @module pageStore
+ * @description Zustand global state store for pageStore. Manages React state and API integrations.
+ */
+
 import { create } from "zustand";
 import axios from "axios";
 

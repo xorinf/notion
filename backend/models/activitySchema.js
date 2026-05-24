@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+/**
+ * @module ActivitySchema
+ * @description Defines the schema for tracking user actions and events within a workspace.
+ * Used to populate the Activity Feed (Audit Journal).
+ */
 export const activitySchema = new mongoose.Schema({
   action: {
     type: String,

@@ -1,3 +1,9 @@
+/**
+ * @file pageAPI.js
+ * @module pageAPI
+ * @description Express router endpoints for pageAPI. Handles CRUD operations and validation.
+ */
+
 import express from 'express'
 import { pageModel, workspaceModel, activityModel } from '../models/mainModels.js'
 import { verifyToken } from '../middleware/verifyToken.js'

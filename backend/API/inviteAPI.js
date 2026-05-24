@@ -1,3 +1,9 @@
+/**
+ * @file inviteAPI.js
+ * @module inviteAPI
+ * @description Express router endpoints for inviteAPI. Handles CRUD operations and validation.
+ */
+
 import express from "express"
 import { inviteModel, workspaceModel, userModel, notificationModel } from "../models/mainModels.js"
 import { verifyToken } from '../middleware/verifyToken.js'

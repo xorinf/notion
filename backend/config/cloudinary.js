@@ -1,3 +1,8 @@
+/**
+ * @file cloudinary.js
+ * @description Configures the Cloudinary SDK using environment variables.
+ * Used for hosting images and file attachments globally.
+ */
 import { v2 as cloudinary } from "cloudinary";
 // import { config } from "dotenv";
 // config({ path: "../.env" });

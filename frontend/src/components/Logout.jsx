@@ -1,3 +1,9 @@
+/**
+ * @file Logout.jsx
+ * @module Logout
+ * @description React component for Logout. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../../store/authStore'

@@ -1,3 +1,9 @@
+/**
+ * @file Register.jsx
+ * @module Register
+ * @description React component for Register. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, NavLink } from 'react-router'
 import { useForm } from 'react-hook-form'

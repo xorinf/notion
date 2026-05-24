@@ -1,3 +1,9 @@
+/**
+ * @file AuthGuards.jsx
+ * @module AuthGuards
+ * @description React component for AuthGuards. Handles UI rendering, local state, and event interactions.
+ */
+
 import { Navigate } from 'react-router'
 import { useAuth } from '../../store/authStore'
 import { Loader2 } from 'lucide-react'

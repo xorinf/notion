@@ -1,3 +1,9 @@
+/**
+ * @file CardModal.jsx
+ * @module CardModal
+ * @description React component for CardModal. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useState, useEffect, useCallback } from 'react'
 import { useBoard } from '../../store/boardStore'
 import axios from 'axios'

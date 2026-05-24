@@ -1,3 +1,9 @@
+/**
+ * @file listAPI.js
+ * @module listAPI
+ * @description Express router endpoints for listAPI. Handles CRUD operations and validation.
+ */
+
 import express from 'express'
 import { listModel, boardModel, cardModel } from '../models/mainModels.js'
 import { verifyToken } from '../middleware/verifyToken.js'

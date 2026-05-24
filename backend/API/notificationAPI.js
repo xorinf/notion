@@ -1,3 +1,9 @@
+/**
+ * @file notificationAPI.js
+ * @module notificationAPI
+ * @description Express router endpoints for notificationAPI. Handles CRUD operations and validation.
+ */
+
 import express from 'express'
 import { notificationModel } from '../models/mainModels.js'
 import { verifyToken } from '../middleware/verifyToken.js'

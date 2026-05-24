@@ -1,3 +1,9 @@
+/**
+ * @file workspaceAPI.js
+ * @module workspaceAPI
+ * @description Express router endpoints for workspaceAPI. Handles CRUD operations and validation.
+ */
+
 import express from 'express'
 import { workspaceModel, userModel, boardModel, pageModel, activityModel } from '../models/mainModels.js'
 import { verifyToken } from '../middleware/verifyToken.js'

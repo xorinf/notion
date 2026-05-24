@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+/**
+ * @module PageSchema
+ * @description Rich text documents/pages within a workspace.
+ * Supports hierarchical nesting via parent/children references.
+ */
 export const pageSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true, default: "Untitled" },
 

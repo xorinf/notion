@@ -1,3 +1,9 @@
+/**
+ * @file Editor.jsx
+ * @module Editor
+ * @description React component for Editor. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useRef, useEffect } from 'react'
 import ReactQuill from 'react-quill-new'
 import 'react-quill-new/dist/quill.snow.css'

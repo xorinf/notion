@@ -1,3 +1,9 @@
+/**
+ * @file userAPI.js
+ * @module userAPI
+ * @description Express router endpoints for userAPI. Handles CRUD operations and validation.
+ */
+
 import express from 'express'
 import { userModel, boardModel, pageModel, workspaceModel } from '../models/mainModels.js'
 import { hash, compare } from "bcryptjs"

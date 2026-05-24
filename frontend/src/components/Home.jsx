@@ -1,3 +1,9 @@
+/**
+ * @file Home.jsx
+ * @module Home
+ * @description React component for Home. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useNavigate } from 'react-router'
 import { Feather, CheckCircle, Users, BarChart3, Zap, FileText, LayoutGrid, BookOpen, ArrowRight } from 'lucide-react'
 

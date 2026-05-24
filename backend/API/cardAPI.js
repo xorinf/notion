@@ -1,3 +1,9 @@
+/**
+ * @file cardAPI.js
+ * @module cardAPI
+ * @description Express router endpoints for cardAPI. Handles CRUD operations and validation.
+ */
+
 import express from 'express'
 import { cardModel, listModel, activityModel, attachmentModel, userModel, notificationModel } from '../models/mainModels.js'
 import { verifyToken } from '../middleware/verifyToken.js'

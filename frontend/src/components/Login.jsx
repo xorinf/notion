@@ -1,3 +1,9 @@
+/**
+ * @file Login.jsx
+ * @module Login
+ * @description React component for Login. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useState } from 'react'
 import { useNavigate, NavLink } from 'react-router'
 import { useForm } from 'react-hook-form'

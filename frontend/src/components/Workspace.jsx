@@ -1,3 +1,9 @@
+/**
+ * @file Workspace.jsx
+ * @module Workspace
+ * @description React component for Workspace. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router'
 import { useWorkspace } from '../../store/workspaceStore'

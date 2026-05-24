@@ -1,3 +1,9 @@
+/**
+ * @file boardAPI.js
+ * @module boardAPI
+ * @description Express router endpoints for boardAPI. Handles CRUD operations and validation.
+ */
+
 import express from 'express'
 import { boardModel, listModel, cardModel, workspaceModel, activityModel } from '../models/mainModels.js'
 import { verifyToken } from '../middleware/verifyToken.js'

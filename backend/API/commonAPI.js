@@ -1,3 +1,9 @@
+/**
+ * @file commonAPI.js
+ * @module commonAPI
+ * @description Express router endpoints for commonAPI. Handles CRUD operations and validation.
+ */
+
 import exp, { response } from 'express';
 import { userModel } from '../models/mainModels.js';
 import jwt from 'jsonwebtoken'

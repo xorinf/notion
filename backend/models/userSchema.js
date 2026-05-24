@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+/**
+ * @module UserSchema
+ * @description Core user profile model. Stores authentication details,
+ * global preferences, and references to starred items.
+ */
 export const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true, trim: true },
   lastName: { type: String, trim: true },

@@ -1,3 +1,9 @@
+/**
+ * @file ChangePassword.jsx
+ * @module ChangePassword
+ * @description React component for ChangePassword. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useForm } from 'react-hook-form'

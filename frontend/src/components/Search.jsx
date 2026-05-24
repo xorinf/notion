@@ -1,3 +1,9 @@
+/**
+ * @file Search.jsx
+ * @module Search
+ * @description React component for Search. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useState, useEffect } from 'react'
 import { Search as SearchIcon, Loader2, FileText, LayoutTemplate, MessageSquare, Briefcase } from 'lucide-react'
 import { useWorkspace } from '../../store/workspaceStore'

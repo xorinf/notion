@@ -1,3 +1,9 @@
+/**
+ * @file Dragabble.jsx
+ * @module Dragabble
+ * @description React component for Dragabble. Handles UI rendering, local state, and event interactions.
+ */
+
 import { Draggable } from '@hello-pangea/dnd'
 
 /**

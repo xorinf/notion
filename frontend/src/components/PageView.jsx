@@ -1,3 +1,9 @@
+/**
+ * @file PageView.jsx
+ * @module PageView
+ * @description React component for PageView. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { usePage } from "../../store/pageStore";
 import { useAuth } from "../../store/authStore";

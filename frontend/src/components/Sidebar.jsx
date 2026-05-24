@@ -1,3 +1,9 @@
+/**
+ * @file Sidebar.jsx
+ * @module Sidebar
+ * @description React component for Sidebar. Handles UI rendering, local state, and event interactions.
+ */
+
 import { NavLink, useNavigate } from 'react-router'
 import { useState, useEffect } from 'react'
 import {

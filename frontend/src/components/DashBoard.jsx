@@ -1,3 +1,9 @@
+/**
+ * @file DashBoard.jsx
+ * @module DashBoard
+ * @description React component for DashBoard. Handles UI rendering, local state, and event interactions.
+ */
+
 import { Outlet } from "react-router";
 import Sidebar from './Sidebar'
 

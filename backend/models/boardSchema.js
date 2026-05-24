@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+/**
+ * @module BoardSchema
+ * @description Defines the Kanban board structure. Boards belong to Workspaces
+ * and contain an array of List references. Handles visibility and member access.
+ */
 export const boardSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
 

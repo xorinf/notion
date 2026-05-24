@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+/**
+ * @module NotificationSchema
+ * @description System notifications model. Used to push alerts to users when
+ * they are assigned to tasks, mentioned, invited, or facing upcoming due dates.
+ */
 export const notificationSchema = new mongoose.Schema({
   recipient: {
     type: mongoose.Schema.Types.ObjectId,

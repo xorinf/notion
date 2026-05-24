@@ -1,3 +1,9 @@
+/**
+ * @file ActivityFeed.jsx
+ * @module ActivityFeed
+ * @description React component for ActivityFeed. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useEffect } from "react";
 import { useActivity } from "../../store/activityStore";
 import { Loader2, Clock, CheckCircle2, FileText, LayoutTemplate, MessageSquare, Trash2, Edit } from "lucide-react";

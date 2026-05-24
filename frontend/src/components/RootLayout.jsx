@@ -1,3 +1,9 @@
+/**
+ * @file RootLayout.jsx
+ * @module RootLayout
+ * @description React component for RootLayout. Handles UI rendering, local state, and event interactions.
+ */
+
 import Header from './Header'
 import Footer from './Footer'
 import { Outlet } from 'react-router'

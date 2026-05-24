@@ -1,3 +1,9 @@
+/**
+ * @file socketStore.js
+ * @module socketStore
+ * @description Zustand global state store for socketStore. Manages React state and API integrations.
+ */
+
 import { create } from 'zustand'
 import { io } from 'socket.io-client'
 

@@ -1,3 +1,9 @@
+/**
+ * @file superadminStore.js
+ * @module superadminStore
+ * @description Zustand global state store for superadminStore. Manages React state and API integrations.
+ */
+
 import { create } from 'zustand';
 import axios from 'axios';
 

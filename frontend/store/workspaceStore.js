@@ -1,3 +1,9 @@
+/**
+ * @file workspaceStore.js
+ * @module workspaceStore
+ * @description Zustand global state store for workspaceStore. Manages React state and API integrations.
+ */
+
 import { create } from "zustand";
 import axios from "axios";
 

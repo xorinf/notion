@@ -1,3 +1,9 @@
+/**
+ * @file boardStore.js
+ * @module boardStore
+ * @description Zustand global state store for boardStore. Manages React state and API integrations.
+ */
+
 import { create } from "zustand";
 import axios from "axios";
 

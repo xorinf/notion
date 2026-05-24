@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 import crypto from "crypto";
 
+/**
+ * @module InviteSchema
+ * @description Handles secure, tokenized invitations for users to join workspaces.
+ * Includes expiration dates and cryptographic token generation.
+ */
 export const inviteSchema = new mongoose.Schema({
   workspace: {
     type: mongoose.Schema.Types.ObjectId,

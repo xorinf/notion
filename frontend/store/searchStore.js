@@ -1,3 +1,9 @@
+/**
+ * @file searchStore.js
+ * @module searchStore
+ * @description Zustand global state store for searchStore. Manages React state and API integrations.
+ */
+
 import { create } from "zustand";
 import axios from "axios";
 

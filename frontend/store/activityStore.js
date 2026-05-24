@@ -1,3 +1,9 @@
+/**
+ * @file activityStore.js
+ * @module activityStore
+ * @description Zustand global state store for activityStore. Manages React state and API integrations.
+ */
+
 import { create } from "zustand";
 import axios from "axios";
 

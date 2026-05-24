@@ -1,3 +1,9 @@
+/**
+ * @file Profile.jsx
+ * @module Profile
+ * @description React component for Profile. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useState, useEffect } from "react";
 import { useAuth } from "../../store/authStore";
 import { useNavigate } from "react-router";

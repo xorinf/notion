@@ -1,3 +1,9 @@
+/**
+ * @file Task.jsx
+ * @module Task
+ * @description React component for Task. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useState, useEffect } from 'react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { useWorkspace } from '../../store/workspaceStore'

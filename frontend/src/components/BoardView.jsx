@@ -1,3 +1,9 @@
+/**
+ * @file BoardView.jsx
+ * @module BoardView
+ * @description React component for BoardView. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { useBoard } from '../../store/boardStore'

@@ -1,3 +1,8 @@
+/**
+ * @file server.js
+ * @description Main entry point for the Notion Clone backend. 
+ * Configures Express, Mongoose, Socket.io for real-time updates, and mounts all REST API routes.
+ */
 import express from 'express';
 import { createServer } from 'http';
 import { Server as SocketIO } from 'socket.io';
@@ -35,11 +40,14 @@ const io = new SocketIO(httpServer, {
   },
 });
 
-// Socket.io event handlers
+// ==========================================
+// 🔌 SOCKET.IO REAL-TIME EVENT HANDLERS
+// ==========================================
 io.on("connection", (socket) => {
   console.log(`Socket connected: ${socket.id}`);
 
   // Workspace room management
+
   socket.on("join-workspace", (workspaceId) => {
     socket.join(`workspace:${workspaceId}`);
   });
@@ -119,7 +127,9 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// routes
+// ==========================================
+// 🚦 REST API ROUTES
+// ==========================================
 app.use("/auth", commonAPP);
 app.use("/card", cardAPP);
 app.use("/activity", activityAPP);
@@ -139,7 +149,9 @@ app.get('/', (req, res) => {
   res.send('active!');
 });
 
-// db connect + start
+// ==========================================
+// 💾 DATABASE CONNECTION & SERVER STARTUP
+// ==========================================
 import mongoose from 'mongoose';
 const db_address = process.env.DB_URL;
 const port = process.env.PORT;

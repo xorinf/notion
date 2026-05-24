@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+/**
+ * @module WorkspaceSchema
+ * @description The highest-level organizational container.
+ * Groups users, boards, and pages together with role-based access control (RBAC).
+ */
 export const workspaceSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
 

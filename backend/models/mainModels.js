@@ -10,7 +10,13 @@ import { activitySchema } from "./activitySchema.js";
 import { notificationSchema } from "./notificationSchema.js";
 import { inviteSchema } from "./inviteSchema.js";
 
-//Models
+/**
+ * @module MainModels
+ * @description Centralized export file for all compiled Mongoose models.
+ * This simplifies importing models across different API routes.
+ */
+
+// Models
 export const userModel = model("User", userSchema);
 export const workspaceModel = model("Workspace", workspaceSchema);
 export const boardModel = model("Board", boardSchema);

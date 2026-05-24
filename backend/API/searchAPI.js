@@ -1,3 +1,9 @@
+/**
+ * @file searchAPI.js
+ * @module searchAPI
+ * @description Express router endpoints for searchAPI. Handles CRUD operations and validation.
+ */
+
 import express from 'express'
 import { cardModel, pageModel, boardModel, userModel } from '../models/mainModels.js'
 import { verifyToken } from '../middleware/verifyToken.js'

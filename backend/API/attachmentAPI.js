@@ -1,3 +1,9 @@
+/**
+ * @file attachmentAPI.js
+ * @module attachmentAPI
+ * @description Express router endpoints for attachmentAPI. Handles CRUD operations and validation.
+ */
+
 import express from 'express'
 import { attachmentModel, cardModel } from '../models/mainModels.js'
 import { verifyToken } from '../middleware/verifyToken.js'

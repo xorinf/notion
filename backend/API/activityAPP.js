@@ -1,3 +1,9 @@
+/**
+ * @file activityAPP.js
+ * @module activityAPP
+ * @description Express router endpoints for activityAPP. Handles CRUD operations and validation.
+ */
+
 import express from 'express'
 import { activityModel } from '../models/mainModels.js'
 import { verifyToken } from '../middleware/verifyToken.js'

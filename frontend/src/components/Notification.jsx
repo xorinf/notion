@@ -1,3 +1,9 @@
+/**
+ * @file Notification.jsx
+ * @module Notification
+ * @description React component for Notification. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { useNotification } from '../../store/notificationStore'

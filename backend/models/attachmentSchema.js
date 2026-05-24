@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+/**
+ * @module AttachmentSchema
+ * @description Defines the schema for file attachments on cards.
+ * Stores Cloudinary URLs and relates to specific cards and users.
+ */
 export const attachmentSchema = new mongoose.Schema({
   filename: { type: String, required: true, trim: true },
 

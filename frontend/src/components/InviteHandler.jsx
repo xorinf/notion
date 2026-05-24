@@ -1,3 +1,9 @@
+/**
+ * @file InviteHandler.jsx
+ * @module InviteHandler
+ * @description React component for InviteHandler. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import axios from 'axios'

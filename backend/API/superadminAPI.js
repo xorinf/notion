@@ -1,3 +1,9 @@
+/**
+ * @file superadminAPI.js
+ * @module superadminAPI
+ * @description Express router endpoints for superadminAPI. Handles CRUD operations and validation.
+ */
+
 import express from 'express';
 import {
   userModel,

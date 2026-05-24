@@ -1,3 +1,9 @@
+/**
+ * @file Page.jsx
+ * @module Page
+ * @description React component for Page. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useState, useEffect } from 'react'
 import { useWorkspace } from '../../store/workspaceStore'
 import { usePage } from '../../store/pageStore'

@@ -1,3 +1,9 @@
+/**
+ * @file Journal.jsx
+ * @module Journal
+ * @description React component for Journal. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useState, useEffect } from 'react'
 import { useActivity } from '../../store/activityStore'
 import { useAuth } from '../../store/authStore'

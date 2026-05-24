@@ -1,3 +1,8 @@
+/**
+ * @file multer.js
+ * @description Configures Multer middleware for handling multipart/form-data.
+ * Validates file sizes (2MB limit) and ensures files are kept in memory (RAM).
+ */
 import multer from "multer";
 
 export const upload = multer({

@@ -1,3 +1,9 @@
+/**
+ * @file Footer.jsx
+ * @module Footer
+ * @description React component for Footer. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useState, useRef } from 'react'
 import { Feather } from 'lucide-react'
 import { useNavigate } from 'react-router'

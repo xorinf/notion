@@ -1,3 +1,9 @@
+/**
+ * @file HomeDashBoard.jsx
+ * @module HomeDashBoard
+ * @description React component for HomeDashBoard. Handles UI rendering, local state, and event interactions.
+ */
+
 import React, { useEffect, useState } from 'react'
 import { useWorkspace } from '../../store/workspaceStore'
 import { usePage } from '../../store/pageStore'

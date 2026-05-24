@@ -1,3 +1,9 @@
+/**
+ * @file Header.jsx
+ * @module Header
+ * @description React component for Header. Handles UI rendering, local state, and event interactions.
+ */
+
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router'
 import { Feather, Menu, X, LogOut, LayoutDashboard } from 'lucide-react'
