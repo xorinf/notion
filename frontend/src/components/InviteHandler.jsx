@@ -11,12 +11,7 @@ import { useWorkspace } from '../../store/workspaceStore'
 import { Loader2, Users, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
 import { primaryBtn, secondaryBtn } from '../styles/common'
 
-// For API calls, configure base URL if needed
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:6767'
-const api = axios.create({
-  baseURL: `${BACKEND_URL}/api`,
-  withCredentials: true
-})
+// We will use the global axios instance which is configured in main.jsx
 
 function InviteHandler() {
   const { token } = useParams()
@@ -41,7 +36,7 @@ function InviteHandler() {
     async function getInviteDetails() {
       try {
         setLoading(true)
-        const res = await api.get(`/invite/details/${token}`)
+        const res = await axios.get(`/invite/details/${token}`)
         setInvite(res.data.payload)
       } catch (err) {
         console.error(err)
