@@ -73,11 +73,7 @@ const router = createBrowserRouter([
   },
   {
     path: "superadmin",
-    element: (
-      <ProtectedRoute>
-        <Superadmin />
-      </ProtectedRoute>
-    ),
+    element: <Superadmin />,
   },
 ]);
 
