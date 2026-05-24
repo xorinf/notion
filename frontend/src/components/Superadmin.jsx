@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { useSuperadmin } from '../../store/superadminStore';
 import { useAuth } from '../../store/authStore';
 
@@ -99,9 +100,17 @@ function WipeModal({ onConfirm, onCancel, loading }) {
 // Main Component
 // ──────────────────────────────────────────────
 export default function Superadmin() {
+  const navigate = useNavigate();
   const { getStats, getUsers, deleteUser, clearAllCollections, stats, users, loading, error, clearError } =
     useSuperadmin();
   const currentUser = useAuth((s) => s.currentUser);
+
+  // Block direct URL access — must come through the password gate
+  useEffect(() => {
+    if (sessionStorage.getItem('sa_auth') !== '1') {
+      navigate('/', { replace: true });
+    }
+  }, [navigate]);
 
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
